@@ -47,5 +47,7 @@
     "tool": "none"
   },
   "configHash": "7a48526e83740e69",
-  "attention": null
+  "attention": null,
+  "checkedAt": "2026-11-26T08:12:06.606Z",
+  "latestAvailable": "1.76.1"
 }
