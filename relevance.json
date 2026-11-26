@@ -111,6 +111,40 @@
       "createdAt": "2026-11-26T07:55:45.855Z",
       "updatedAt": "2026-11-26T07:56:02.537Z",
       "iconUrl": "https://avatars.githubusercontent.com/u/2758598?v=4"
+    },
+    {
+      "id": "infinity-for-reddit",
+      "name": "Infinity-For-Reddit",
+      "packageName": "ml.docilealligator.infinityforreddit.plus",
+      "source": {
+        "type": "github",
+        "url": "https://github.com/Docile-Alligator/Infinity-For-Reddit",
+        "assetPattern": "^Infinity\\+-[\\w.]+\\.apk$"
+      },
+      "tool": "revanced",
+      "patches": [
+        {
+          "name": "Spoof client"
+        },
+        {
+          "name": "Unlock subscription"
+        }
+      ],
+      "customPatches": [],
+      "pin": null,
+      "customize": {},
+      "listing": {
+        "summary": "A Reddit client for Android",
+        "description": "",
+        "category": "System",
+        "website": "https://play.google.com/store/apps/details?id=ml.docilealligator.infinityforreddit.plus",
+        "screenshots": []
+      },
+      "enabled": true,
+      "createdAt": "2026-11-26T08:09:11.148Z",
+      "updatedAt": "2026-11-26T08:09:32.474Z",
+      "iconUrl": "https://avatars.githubusercontent.com/u/25734209?v=4",
+      "patchSourceId": "revanced"
     }
   ]
 }
