@@ -1,4 +1,4 @@
-# Managed by Relevance (engine 1.0.1). Changes may be overwritten.
+# Managed by Relevance (engine 1.0.2). Changes may be overwritten.
 name: Relevance publish
 run-name: Publish F-Droid repository and store site
 
@@ -10,6 +10,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read
 
 concurrency:
   group: relevance-pages

@@ -1,5 +1,5 @@
 // shared/types.ts
-var ENGINE_VERSION = "1.0.1";
+var ENGINE_VERSION = "1.0.2";
 
 // engine/build.ts
 import { copyFileSync, existsSync as existsSync3, mkdirSync as mkdirSync2, readdirSync, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
@@ -980,7 +980,7 @@ function rewriteManifest(xml, opts) {
   }
   if (opts.newPkg && opts.newPkg !== opts.oldPkg) {
     let { oldPkg: oldP, newPkg: newP } = opts;
-    m = m.replace(/android:authorities="([^"]*)"/g, (_, v) => `android:authorities="${v.split(";").map((a) => a.startsWith(oldP) ? newP + a.slice(oldP.length) : `${newP}.${a}`).join(";")}"`);
+    m = m.replace(/(<(?:activity|activity-alias|service|receiver|provider|application|instrumentation)\b[^>]*?android:(?:name|targetActivity|backupAgent)=")\.([^"]+)"/g, `$1${oldP}.$2"`), m = m.replace(/(<(?:activity|activity-alias|service|receiver|provider|application)\b[^>]*?android:(?:name|targetActivity)=")\.([^"]+)"/g, `$1${oldP}.$2"`), m = m.replace(/(<manifest\b[^>]*?\spackage=")[^"]+"/, `$1${newP}"`), m = m.replace(/android:authorities="([^"]*)"/g, (_, v) => `android:authorities="${v.split(";").map((a) => a.startsWith(oldP) ? newP + a.slice(oldP.length) : `${newP}.${a}`).join(";")}"`);
     let perms = [...m.matchAll(/<permission\b[^>]*android:name="([^"]+)"/g)].map((x) => x[1]);
     for (let perm of perms) {
       let np = perm.startsWith(oldP) ? newP + perm.slice(oldP.length) : `${newP}.${perm}`;
@@ -1025,21 +1025,8 @@ async function customize(appId) {
   let next = rewriteManifest(xml, { oldPkg: curPkg, newPkg: c.packageName, label: c.name, icon: Boolean(c.icon) });
   if (writeFileSync2(manifestPath, next), c.name)
     ok(`Renamed the app to "${c.name}"`);
-  if (c.packageName && c.packageName !== curPkg) {
-    let yml = join(dec, "apktool.yml"), y = readFileSync3(yml, "utf8");
-    if (/renameManifestPackage:/.test(y))
-      y = y.replace(/renameManifestPackage:.*/, `renameManifestPackage: ${c.packageName}`);
-    else if (/packageInfo:/.test(y))
-      y = y.replace(/packageInfo:\s*\n/, `packageInfo:
-  renameManifestPackage: ${c.packageName}
-`);
-    else
-      y += `
-packageInfo:
-  renameManifestPackage: ${c.packageName}
-`;
-    writeFileSync2(yml, y), ok(`Package name ${curPkg} → ${c.packageName}`);
-  }
+  if (c.packageName && c.packageName !== curPkg)
+    ok(`Package name ${curPkg} → ${c.packageName}`);
   info("Rebuilding APK"), await run("java", ["-jar", apktool, "b", "-o", `${WORK}/customized.apk`, dec]), copyFileSync(`${WORK}/customized.apk`, `${WORK}/current.apk`), ok("Customized APK ready");
 }
 async function sign(appId) {
