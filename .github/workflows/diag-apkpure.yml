@@ -1,0 +1,36 @@
+name: Diagnose APKPure
+on: workflow_dispatch
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v7
+        with: { node-version: '22' }
+      - name: Probe
+        run: |
+          cat > p.mjs <<'JS'
+          const UA = 'Relevance (+https://github.com/oxcl/relevance)';
+          const probes = [
+            ['download page (engine UA)', 'https://apkpure.net/reddit/com.reddit.frontpage/download/2026.40.0', { 'User-Agent': UA }, 'follow'],
+            ['download page (default UA)', 'https://apkpure.net/reddit/com.reddit.frontpage/download/2026.40.0', {}, 'follow'],
+            ['versions page (engine UA)', 'https://apkpure.net/reddit-app/com.reddit.frontpage/versions', { 'User-Agent': UA }, 'follow'],
+            ['direct XAPK by versionCode', 'https://d.apkpure.net/b/XAPK/com.reddit.frontpage?versionCode=2640090', { 'User-Agent': UA }, 'manual'],
+            ['direct APK by versionCode', 'https://d.apkpure.net/b/APK/com.reddit.frontpage?versionCode=2640090', { 'User-Agent': UA }, 'manual'],
+            ['direct latest', 'https://d.apkpure.net/b/APK/com.reddit.frontpage?version=latest', { 'User-Agent': UA }, 'manual'],
+          ];
+          for (const [name, url, headers, redirect] of probes) {
+            try {
+              const r = await fetch(url, { headers, redirect });
+              const body = redirect === 'manual' ? '' : await r.text();
+              const link = body.match(/https:\/\/d\.apkpure\.(?:net|com)\/b\/(?:APK|XAPK)\/[^"'\s]+versionCode=\d+/)?.[0];
+              console.log(`== ${name}: ${r.status} final=${r.url}`);
+              console.log(`   location=${r.headers.get('location')?.slice(0, 160)} server=${r.headers.get('server')} cf-mitigated=${r.headers.get('cf-mitigated')}`);
+              if (body) console.log(`   len=${body.length} title=${body.match(/<title>([^<]*)/)?.[1]} link=${link} codes=${[...body.matchAll(/data-dt-version-code="(\d+)"/g)].length}`);
+              if (redirect === 'manual' && r.headers.get('location')?.startsWith('https://data')) {
+                const h = await fetch(r.headers.get('location'), { method: 'HEAD', headers });
+                console.log(`   file: ${h.status} ${h.headers.get('content-length')} ${h.headers.get('content-disposition')}`);
+              }
+            } catch (e) { console.log(`== ${name}: ERROR ${e.message}`); }
+          }
+          JS
+          node p.mjs
