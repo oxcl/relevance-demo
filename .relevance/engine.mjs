@@ -1,5 +1,5 @@
 // shared/types.ts
-var ENGINE_VERSION = "1.0.7";
+var ENGINE_VERSION = "1.0.8";
 
 // engine/build.ts
 import { copyFileSync, existsSync as existsSync3, mkdirSync as mkdirSync2, readdirSync, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
@@ -891,9 +891,29 @@ async function plan(appId, opts) {
     s.status = "building", s.targetVersion = version || void 0, s.history.unshift({ runId: RUN_ID, version: version || void 0, status: "running", at: p.startedAt, trigger: opts.trigger }), s.history = s.history.filter((h, i, arr) => arr.findIndex((x) => x.runId === h.runId) === i);
   }, `relevance: building ${app.name} ${version ?? ""}`.trim());
 }
-function isZipWith(file, name) {
-  let buf = readFileSync3(file), tail = buf.subarray(Math.max(0, buf.length - 4194304)).toString("latin1");
-  return name.test(tail);
+function zipEntries(file) {
+  let buf = readFileSync3(file), eocd = -1;
+  for (let i = buf.length - 22;i >= Math.max(0, buf.length - 66000); i--)
+    if (buf.readUInt32LE(i) === 101010256) {
+      eocd = i;
+      break;
+    }
+  if (eocd < 0)
+    return [];
+  let cdSize = buf.readUInt32LE(eocd + 12), cdOff = buf.readUInt32LE(eocd + 16);
+  if (cdOff === 4294967295) {
+    let loc = eocd - 20;
+    if (buf.readUInt32LE(loc) === 117853008) {
+      let z64 = Number(buf.readBigUInt64LE(loc + 8));
+      cdSize = Number(buf.readBigUInt64LE(z64 + 40)), cdOff = Number(buf.readBigUInt64LE(z64 + 48));
+    }
+  }
+  let names = [], p = cdOff;
+  while (p < cdOff + cdSize && buf.readUInt32LE(p) === 33639248) {
+    let n = buf.readUInt16LE(p + 28), e = buf.readUInt16LE(p + 30), c = buf.readUInt16LE(p + 32);
+    names.push(buf.toString("utf8", p + 46, p + 46 + n)), p += 46 + n + e + c;
+  }
+  return names;
 }
 async function fetchApk(appId) {
   let p = loadPlan(), cfg = loadConfig(), app = getApp(cfg, appId);
@@ -904,19 +924,20 @@ async function fetchApk(appId) {
   let headers = {};
   if (app.source.type === "upload" || p.download.url.includes(`github.com/${REPO}/`))
     headers.Authorization = `Bearer ${env.GITHUB_TOKEN}`;
-  let res = await download(p.download.url, raw, headers), isBundle = /xapk|apkm|apks/i.test(res.finalUrl) || isZipWith(raw, /manifest\.json|\.apk[^\w]|split_config|base\.apk/), looksApk = isZipWith(raw, /AndroidManifest\.xml/) && isZipWith(raw, /classes\.dex|resources\.arsc/), input = `${WORK}/input.apk`;
-  if (looksApk && !/base\.apk/.test(readFileSync3(raw).subarray(-2097152).toString("latin1")))
+  let res = await download(p.download.url, raw, headers), names = zipEntries(raw), looksApk = names.includes("AndroidManifest.xml"), isBundle = !looksApk && names.some((n) => /\.apk$/i.test(n)), input = `${WORK}/input.apk`;
+  if (looksApk)
     renameSync(raw, input);
   else if (isBundle) {
     info("Split APK bundle detected — merging into a single APK with APKEditor");
-    let ed = await fetchCli("apkeditor"), bundle = `${WORK}/bundle.zip`;
+    let ed = await fetchCli("apkeditor"), bundle = `${WORK}/bundle.xapk`;
     renameSync(raw, bundle), await run("java", ["-jar", ed, "m", "-i", bundle, "-o", input, "-f"]);
   } else
     throw Error("The downloaded file is not an APK");
   let meta = await apkInfo(input);
   if (ok(`${meta.packageName} ${meta.versionName} (${meta.versionCode}), ${(statSync(input).size / 1048576).toFixed(1)} MB`), meta.packageName !== app.packageName)
     warn(`Package name ${meta.packageName} differs from the configured ${app.packageName}`);
-  writeJson(`${WORK}/input.json`, meta), copyFileSync(input, `${WORK}/current.apk`);
+  if (writeJson(`${WORK}/input.json`, meta), copyFileSync(input, `${WORK}/current.apk`), isBundle && !p.rebuild)
+    info("A merged bundle has no valid signature — signing it with your key"), await sign(appId);
 }
 function optionArg(v) {
   if (v === null || v === void 0)
