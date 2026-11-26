@@ -1,5 +1,5 @@
 // shared/types.ts
-var ENGINE_VERSION = "1.0.6";
+var ENGINE_VERSION = "1.0.7";
 
 // engine/build.ts
 import { copyFileSync, existsSync as existsSync3, mkdirSync as mkdirSync2, readdirSync, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
@@ -257,14 +257,24 @@ function apkpurePage(url) {
   if (!pkg)
     throw Error("Could not find a package name in the APKPure URL");
   let idx = parts.indexOf(pkg), slug = parts[idx - 1] || "app";
-  return { pkg, page: `https://apkpure.com/${slug}/${pkg}` };
+  return { pkg, page: `https://apkpure.net/${slug}/${pkg}` };
 }
 async function apkpureVersions(ctx, page) {
   let r = await ctx.fetch(`${page}/versions`, { headers: ua(ctx), redirect: "follow" });
   if (!r.ok)
     throw Error(`versions ${r.status}`);
-  let v = [...(await r.text()).matchAll(/data-dt-version="([^"]+)"/g)].map((m) => m[1]).filter((x) => !/SECONDARY/i.test(x));
+  let html = await r.text(), v = [
+    ...[...html.matchAll(/\/download\/([^"/?#]+)"/g)].map((m) => decodeURIComponent(m[1])),
+    ...[...html.matchAll(/data-dt-version="([^"]+)"/g)].map((m) => m[1])
+  ].filter((x) => !/SECONDARY/i.test(x) && /\d/.test(x));
   return sortVersionsDesc(v);
+}
+async function apkpureVersionUrl(ctx, page, version) {
+  let r = await ctx.fetch(`${page}/download/${encodeURIComponent(version)}`, { headers: ua(ctx), redirect: "follow" });
+  if (!r.ok)
+    return null;
+  let m = (await r.text()).match(/https:\/\/d\.apkpure\.(?:net|com)\/b\/(?:APK|XAPK)\/[^"'\s]+versionCode=\d+/);
+  return m ? decodeHtml(m[0]) : null;
 }
 async function getDownload(src, version, ctx) {
   switch (src.type) {
@@ -289,8 +299,13 @@ async function getDownload(src, version, ctx) {
       };
     }
     case "apkpure": {
-      let { pkg } = apkpurePage(src.url), q = version ? `version=${encodeURIComponent(version)}` : "version=latest";
-      return { url: `https://d.apkpure.com/b/APK/${pkg}?${q}`, version: version || void 0, fileName: `${pkg}.apk` };
+      let { pkg, page } = apkpurePage(src.url);
+      if (version) {
+        let url = await apkpureVersionUrl(ctx, page, version).catch(() => null);
+        if (url)
+          return { url, version, fileName: `${pkg}.apk` };
+      }
+      return { url: `https://d.apkpure.net/b/APK/${pkg}?version=latest`, version: void 0, fileName: `${pkg}.apk` };
     }
     case "url":
     case "upload":
