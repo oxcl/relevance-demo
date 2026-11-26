@@ -1,5 +1,5 @@
 // shared/types.ts
-var ENGINE_VERSION = "1.0.8";
+var ENGINE_VERSION = "1.0.9";
 
 // engine/build.ts
 import { copyFileSync, existsSync as existsSync3, mkdirSync as mkdirSync2, readdirSync, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
@@ -548,7 +548,7 @@ function setOutput(k, v) {
 `, { flag: "a" });
 }
 async function latestReleaseAsset(ownerRepo, re) {
-  let rels = await ghApi(`/repos/${ownerRepo}/releases?per_page=10`);
+  let all = await ghApi(`/repos/${ownerRepo}/releases?per_page=15`), rels = [...all.filter((r) => !r.prerelease), ...all.filter((r) => r.prerelease)];
   for (let rel of rels) {
     if (rel.draft)
       continue;
@@ -873,7 +873,10 @@ async function plan(appId, opts) {
   if (t.conflict)
     throw Object.assign(Error(t.reason), { attention: "no-compatible-version" });
   log(`Target version: ${t.target ?? "latest"} — ${t.reason}`);
-  let dl = await getDownload(app.source, t.target, { fetch, githubToken: env.GITHUB_TOKEN }), version = dl.version || t.target, same = state.current && version && (state.current.sourceVersion ?? state.current.version) === version && state.configHash === hash && (!index || state.patchVersion === index.version), p = {
+  let dl = await getDownload(app.source, t.target, { fetch, githubToken: env.GITHUB_TOKEN });
+  if (t.target && dl.version !== t.target && !app.pin)
+    warn(`Couldn't find a download for ${t.target} at the source; using what it offers (${dl.version || "latest"})`);
+  let version = dl.version || t.target, same = state.current && version && (state.current.sourceVersion ?? state.current.version) === version && state.configHash === hash && (!index || state.patchVersion === index.version), p = {
     appId,
     version: version || null,
     reason: t.reason,
@@ -934,7 +937,9 @@ async function fetchApk(appId) {
   } else
     throw Error("The downloaded file is not an APK");
   let meta = await apkInfo(input);
-  if (ok(`${meta.packageName} ${meta.versionName} (${meta.versionCode}), ${(statSync(input).size / 1048576).toFixed(1)} MB`), meta.packageName !== app.packageName)
+  if (ok(`${meta.packageName} ${meta.versionName} (${meta.versionCode}), ${(statSync(input).size / 1048576).toFixed(1)} MB`), p.version && meta.versionName !== p.version && app.source.type !== "upload")
+    warn(`The source delivered ${meta.versionName} instead of the target ${p.version}; patches may not fully support it`);
+  if (meta.packageName !== app.packageName)
     warn(`Package name ${meta.packageName} differs from the configured ${app.packageName}`);
   if (writeJson(`${WORK}/input.json`, meta), copyFileSync(input, `${WORK}/current.apk`), isBundle && !p.rebuild)
     info("A merged bundle has no valid signature — signing it with your key"), await sign(appId);
