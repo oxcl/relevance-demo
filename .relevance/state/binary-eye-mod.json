@@ -66,5 +66,12 @@
   "configHash": "7a48526e83740e69",
   "attention": null,
   "checkedAt": "2026-11-26T09:19:40.334Z",
-  "latestAvailable": "1.76.1"
+  "latestAvailable": "1.76.1",
+  "sourceCert": {
+    "sha256": [
+      "9ecdbf0677dd50609c76c2ba05dbe362232327b10a1c37cd58722993d9fe5d57"
+    ],
+    "firstSeen": "2026-11-26T09:24:42.924Z",
+    "version": "1.76.1"
+  }
 }
