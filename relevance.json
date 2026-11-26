@@ -145,6 +145,70 @@
       "updatedAt": "2026-11-26T08:18:49.933Z",
       "iconUrl": "https://avatars.githubusercontent.com/u/25734209?v=4",
       "patchSourceId": "revanced"
+    },
+    {
+      "id": "scanner-clone",
+      "name": "Binary Eye Mod",
+      "packageName": "de.markusfisch.android.binaryeye.binaryeyemod",
+      "source": {
+        "type": "upload",
+        "url": "https://github.com/oxcl/relevance-demo/releases/download/source-scanner-clone-1.76.1/de.markusfisch.android.binaryeye.binaryeyemod-1.76.1.apk",
+        "uploadedVersion": "1.76.1"
+      },
+      "tool": "none",
+      "patches": [],
+      "customPatches": [],
+      "pin": null,
+      "customize": {
+        "name": "Scanner Clone",
+        "packageName": "de.markusfisch.android.binaryeye.binaryeyemod.scannerclone",
+        "icon": {
+          "mode": "edit",
+          "path": ".relevance/apps/scanner-clone/icon.png",
+          "edit": {
+            "hue": 40,
+            "brightness": 0,
+            "saturation": 0,
+            "contrast": 0,
+            "badge": {
+              "enabled": true,
+              "icon": "text:RV",
+              "fg": "#ffffff",
+              "bg": "#bf6447",
+              "iconBorder": false,
+              "iconBorderColor": "#36271d",
+              "circleBorder": true,
+              "circleBorderColor": "#ffffff",
+              "corner": "tr",
+              "size": 36
+            },
+            "text": {
+              "enabled": false,
+              "value": "Mod",
+              "fg": "#ffffff",
+              "bg": "#36271d",
+              "bgEnabled": true,
+              "size": 40,
+              "position": 7,
+              "textBorder": false,
+              "textBorderColor": "#36271d",
+              "boxBorder": false,
+              "boxBorderColor": "#ffffff"
+            }
+          }
+        }
+      },
+      "listing": {
+        "summary": "A sideloaded clone, uploaded by hand.",
+        "description": "",
+        "category": "System",
+        "website": "",
+        "screenshots": []
+      },
+      "enabled": true,
+      "createdAt": "2026-11-26T08:32:09.643Z",
+      "updatedAt": "2026-11-26T08:32:25.530Z",
+      "iconUrl": ".relevance/apps/scanner-clone/source-icon.png"
     }
   ]
 }
