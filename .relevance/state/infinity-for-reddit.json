@@ -1,15 +1,54 @@
 {
   "appId": "infinity-for-reddit",
-  "status": "building",
-  "releases": [],
+  "status": "ok",
+  "releases": [
+    {
+      "version": "8.4.0",
+      "versionCode": 234,
+      "tag": "infinity-for-reddit-8.4.0-0c417f",
+      "date": "2026-11-26T08:10:09.257Z",
+      "size": 21313013,
+      "sha256": "29f7a9627db01d8785e88425e76711d39ec3f5da84360517adc948de064c0461",
+      "apk": "ml.docilealligator.infinityforreddit.plus_234_0c417f.apk",
+      "url": "https://github.com/oxcl/relevance-demo/releases/download/infinity-for-reddit-8.4.0-0c417f/ml.docilealligator.infinityforreddit.plus_234_0c417f.apk",
+      "patches": [
+        "Spoof client",
+        "Unlock subscription"
+      ],
+      "tool": "revanced",
+      "patchVersion": "v6.2.1",
+      "sourceVersion": "8.4.0"
+    }
+  ],
   "history": [
     {
       "runId": 45780823395,
       "version": "8.4.0",
-      "status": "running",
+      "status": "success",
       "at": "2026-11-26T08:09:48.999Z",
-      "trigger": "manual"
+      "trigger": "manual",
+      "durationMs": 20364
     }
   ],
-  "targetVersion": "8.4.0"
+  "targetVersion": "8.4.0",
+  "current": {
+    "version": "8.4.0",
+    "versionCode": 234,
+    "tag": "infinity-for-reddit-8.4.0-0c417f",
+    "date": "2026-11-26T08:10:09.257Z",
+    "size": 21313013,
+    "sha256": "29f7a9627db01d8785e88425e76711d39ec3f5da84360517adc948de064c0461",
+    "apk": "ml.docilealligator.infinityforreddit.plus_234_0c417f.apk",
+    "url": "https://github.com/oxcl/relevance-demo/releases/download/infinity-for-reddit-8.4.0-0c417f/ml.docilealligator.infinityforreddit.plus_234_0c417f.apk",
+    "patches": [
+      "Spoof client",
+      "Unlock subscription"
+    ],
+    "tool": "revanced",
+    "patchVersion": "v6.2.1",
+    "sourceVersion": "8.4.0"
+  },
+  "configHash": "0c417f71a3b4a217",
+  "patchVersion": "v6.2.1",
+  "attention": null
 }
