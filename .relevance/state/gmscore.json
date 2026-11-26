@@ -1,0 +1,15 @@
+{
+  "appId": "gmscore",
+  "status": "building",
+  "releases": [],
+  "history": [
+    {
+      "runId": 45779030711,
+      "version": "0.3.18.252432",
+      "status": "running",
+      "at": "2026-11-26T07:56:20.733Z",
+      "trigger": "manual"
+    }
+  ],
+  "targetVersion": "0.3.18.252432"
+}
