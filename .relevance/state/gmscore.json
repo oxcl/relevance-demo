@@ -39,5 +39,7 @@
     "tool": "none"
   },
   "configHash": "afee67df355fb55a",
-  "attention": null
+  "attention": null,
+  "checkedAt": "2026-11-26T08:12:08.242Z",
+  "latestAvailable": "0.3.18.252432"
 }
