@@ -34,7 +34,6 @@
       "error": "java exited with code 1"
     }
   ],
-  "targetVersion": "1.76.1",
   "attention": null,
   "current": {
     "version": "1.76.1",
@@ -49,5 +48,6 @@
     "tool": "none",
     "sourceVersion": "1.76.1"
   },
-  "configHash": "f46a03e0b67a8f3b"
+  "configHash": "f46a03e0b67a8f3b",
+  "checkedAt": "2026-11-26T09:19:44.811Z"
 }
