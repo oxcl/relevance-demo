@@ -22,5 +22,69 @@
     }
   },
   "patchSources": [],
-  "apps": []
+  "apps": [
+    {
+      "id": "binary-eye-mod",
+      "name": "Binary Eye",
+      "packageName": "de.markusfisch.android.binaryeye",
+      "source": {
+        "type": "fdroid",
+        "url": "https://f-droid.org/packages/de.markusfisch.android.binaryeye/"
+      },
+      "tool": "none",
+      "patches": [],
+      "customPatches": [],
+      "pin": null,
+      "customize": {
+        "name": "Binary Eye Mod",
+        "packageName": "de.markusfisch.android.binaryeye.binaryeyemod",
+        "icon": {
+          "mode": "edit",
+          "path": ".relevance/apps/binary-eye-mod/icon.png",
+          "edit": {
+            "hue": 40,
+            "brightness": 0,
+            "saturation": 0,
+            "contrast": 0,
+            "badge": {
+              "enabled": true,
+              "icon": "text:RV",
+              "fg": "#ffffff",
+              "bg": "#bf6447",
+              "iconBorder": false,
+              "iconBorderColor": "#36271d",
+              "circleBorder": true,
+              "circleBorderColor": "#ffffff",
+              "corner": "tr",
+              "size": 36
+            },
+            "text": {
+              "enabled": false,
+              "value": "Mod",
+              "fg": "#ffffff",
+              "bg": "#36271d",
+              "bgEnabled": true,
+              "size": 40,
+              "position": 7,
+              "textBorder": false,
+              "textBorderColor": "#36271d",
+              "boxBorder": false,
+              "boxBorderColor": "#ffffff"
+            }
+          }
+        }
+      },
+      "listing": {
+        "summary": "QR code and barcode scanner with no ads",
+        "description": "",
+        "category": "System",
+        "website": "https://f-droid.org/packages/de.markusfisch.android.binaryeye/",
+        "screenshots": []
+      },
+      "enabled": true,
+      "createdAt": "2026-11-26T07:51:14.545Z",
+      "updatedAt": "2026-11-26T07:51:31.749Z",
+      "iconUrl": "https://f-droid.org/repo/de.markusfisch.android.binaryeye/en-US/icon_JCQAH6daJAEg6038ZyKnweYEAYfbht0wrM_VejEpLxg=.png"
+    }
+  ]
 }
