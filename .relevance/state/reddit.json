@@ -1,14 +1,14 @@
 {
   "appId": "reddit",
-  "status": "building",
+  "status": "ok",
   "releases": [
     {
       "version": "2026.40.0",
       "versionCode": 2147483647,
       "tag": "reddit-2026.40.0-666c8a",
-      "date": "2026-11-26T09:18:02.294Z",
+      "date": "2026-11-26T09:25:26.803Z",
       "size": 78593237,
-      "sha256": "7dd09f43be580141a86ff87dafd0934e3d98a7a31b2f92290c563057382a9ef6",
+      "sha256": "2c7774de171d76bf611af1750fb956a701edcc3b5e70ff44144fce9ee7f96104",
       "apk": "com.reddit.frontpage_2147483647_666c8a.apk",
       "url": "https://github.com/oxcl/relevance-demo/releases/download/reddit-2026.40.0-666c8a/com.reddit.frontpage_2147483647_666c8a.apk",
       "patches": [
@@ -171,9 +171,10 @@
     {
       "runId": 45791673580,
       "version": "2026.40.0",
-      "status": "running",
+      "status": "success",
       "at": "2026-11-26T09:24:37.149Z",
-      "trigger": "manual"
+      "trigger": "manual",
+      "durationMs": 49794
     },
     {
       "runId": 45790512708,
@@ -221,9 +222,9 @@
     "version": "2026.40.0",
     "versionCode": 2147483647,
     "tag": "reddit-2026.40.0-666c8a",
-    "date": "2026-11-26T09:18:02.294Z",
+    "date": "2026-11-26T09:25:26.803Z",
     "size": 78593237,
-    "sha256": "7dd09f43be580141a86ff87dafd0934e3d98a7a31b2f92290c563057382a9ef6",
+    "sha256": "2c7774de171d76bf611af1750fb956a701edcc3b5e70ff44144fce9ee7f96104",
     "apk": "com.reddit.frontpage_2147483647_666c8a.apk",
     "url": "https://github.com/oxcl/relevance-demo/releases/download/reddit-2026.40.0-666c8a/com.reddit.frontpage_2147483647_666c8a.apk",
     "patches": [
