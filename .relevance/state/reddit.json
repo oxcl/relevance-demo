@@ -1,6 +1,6 @@
 {
   "appId": "reddit",
-  "status": "ok",
+  "status": "failed",
   "releases": [
     {
       "version": "2026.46.0",
@@ -87,6 +87,13 @@
   ],
   "history": [
     {
+      "runId": 45787647228,
+      "status": "failure",
+      "at": "2026-11-26T08:58:10.704Z",
+      "trigger": "manual",
+      "error": "Couldn't read APKPure versions (APKPure versions page responded 403)"
+    },
+    {
       "runId": 45785773640,
       "version": "2026.46.0",
       "status": "success",
@@ -112,7 +119,14 @@
     }
   ],
   "targetVersion": "2026.40.0",
-  "attention": null,
+  "attention": {
+    "kind": "build-failed",
+    "message": "Building the update failed during \"plan\". The last good build stays published.",
+    "at": "2026-11-26T08:58:10.704Z",
+    "details": [
+      "Couldn't read APKPure versions (APKPure versions page responded 403)"
+    ]
+  },
   "current": {
     "version": "2026.46.0",
     "versionCode": 2147483647,
