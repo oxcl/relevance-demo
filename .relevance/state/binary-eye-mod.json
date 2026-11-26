@@ -1,16 +1,16 @@
 {
   "appId": "binary-eye-mod",
-  "status": "building",
+  "status": "ok",
   "releases": [
     {
       "version": "1.76.1",
       "versionCode": 184,
       "tag": "binary-eye-mod-1.76.1-7a4852",
-      "date": "2026-11-26T07:52:15.476Z",
+      "date": "2026-11-26T08:01:01.142Z",
       "size": 7670576,
-      "sha256": "2975fe24497223efecf766ca348c7775dbac39e26a9d9e47635a5bf6388aa8b8",
-      "apk": "de.markusfisch.android.binaryeye_184_7a4852.apk",
-      "url": "https://github.com/oxcl/relevance-demo/releases/download/binary-eye-mod-1.76.1-7a4852/de.markusfisch.android.binaryeye_184_7a4852.apk",
+      "sha256": "ad48308f40bdc9bccf5785594a18fcb694d2c5a7f92eb0f2c80cd9557540d607",
+      "apk": "de.markusfisch.android.binaryeye.binaryeyemod_184_7a4852.apk",
+      "url": "https://github.com/oxcl/relevance-demo/releases/download/binary-eye-mod-1.76.1-7a4852/de.markusfisch.android.binaryeye.binaryeyemod_184_7a4852.apk",
       "patches": [],
       "tool": "none"
     }
@@ -19,9 +19,10 @@
     {
       "runId": 45779588757,
       "version": "1.76.1",
-      "status": "running",
+      "status": "success",
       "at": "2026-11-26T08:00:46.551Z",
-      "trigger": "manual"
+      "trigger": "manual",
+      "durationMs": 14733
     },
     {
       "runId": 45778472828,
@@ -37,11 +38,11 @@
     "version": "1.76.1",
     "versionCode": 184,
     "tag": "binary-eye-mod-1.76.1-7a4852",
-    "date": "2026-11-26T07:52:15.476Z",
+    "date": "2026-11-26T08:01:01.142Z",
     "size": 7670576,
-    "sha256": "2975fe24497223efecf766ca348c7775dbac39e26a9d9e47635a5bf6388aa8b8",
-    "apk": "de.markusfisch.android.binaryeye_184_7a4852.apk",
-    "url": "https://github.com/oxcl/relevance-demo/releases/download/binary-eye-mod-1.76.1-7a4852/de.markusfisch.android.binaryeye_184_7a4852.apk",
+    "sha256": "ad48308f40bdc9bccf5785594a18fcb694d2c5a7f92eb0f2c80cd9557540d607",
+    "apk": "de.markusfisch.android.binaryeye.binaryeyemod_184_7a4852.apk",
+    "url": "https://github.com/oxcl/relevance-demo/releases/download/binary-eye-mod-1.76.1-7a4852/de.markusfisch.android.binaryeye.binaryeyemod_184_7a4852.apk",
     "patches": [],
     "tool": "none"
   },
