@@ -1,6 +1,6 @@
 {
   "appId": "reddit",
-  "status": "ok",
+  "status": "building",
   "releases": [
     {
       "version": "2026.40.0",
@@ -168,6 +168,13 @@
     }
   ],
   "history": [
+    {
+      "runId": 45791673580,
+      "version": "2026.40.0",
+      "status": "running",
+      "at": "2026-11-26T09:24:37.149Z",
+      "trigger": "manual"
+    },
     {
       "runId": 45790512708,
       "version": "2026.40.0",
