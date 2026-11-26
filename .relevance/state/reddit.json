@@ -1,8 +1,15 @@
 {
   "appId": "reddit",
-  "status": "failed",
+  "status": "building",
   "releases": [],
   "history": [
+    {
+      "runId": 45785315366,
+      "version": "2026.40.0",
+      "status": "running",
+      "at": "2026-11-26T08:41:44.171Z",
+      "trigger": "manual"
+    },
     {
       "runId": 45784837807,
       "version": "2026.40.0",
