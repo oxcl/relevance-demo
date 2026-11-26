@@ -1,0 +1,45 @@
+# Managed by Relevance (engine 1.0.0). Changes may be overwritten.
+name: Relevance updates
+run-name: "Check for updates${{ inputs.app && format(' · {0}', inputs.app) || '' }}"
+
+on:
+  schedule:
+    - cron: '4 7 * * *'
+  workflow_dispatch:
+    inputs:
+      app:
+        description: Only check this app (optional)
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+  actions: write
+  issues: write
+  id-token: write
+
+concurrency:
+  group: relevance-updates
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Check apps and patches
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check for updates [check]
+        run: node .relevance/engine.mjs check --app "${{ inputs.app }}"

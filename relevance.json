@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "owner": "oxcl",
+  "createdAt": "2026-11-26T07:50:37.963Z",
+  "settings": {
+    "notifications": {
+      "email": true,
+      "issue": true,
+      "inApp": true,
+      "fdroid": true
+    },
+    "store": {
+      "title": "oxcl's apps",
+      "description": "A small, honest collection of apps — kept up to date automatically."
+    },
+    "relevanceUrl": "https://relevance.cocoparrot-backend.workers.dev",
+    "signing": {
+      "mode": "generated",
+      "fingerprint": "E2A511E43147C2D46C5F9C0986CE086C1FC62931EA8449392171DC8187EA409E",
+      "alias": "relevance",
+      "createdAt": "2026-11-26T07:50:37.963Z"
+    }
+  },
+  "patchSources": [],
+  "apps": []
+}

@@ -1,0 +1,90 @@
+# Managed by Relevance (engine 1.0.0). Changes may be overwritten.
+name: Relevance build
+run-name: "Build ${{ inputs.app }} · ${{ inputs.trigger }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: App id from relevance.json
+        required: true
+        type: string
+      force:
+        description: Rebuild even if nothing changed
+        type: boolean
+        default: false
+      trigger:
+        description: What started this build
+        type: string
+        default: manual
+
+permissions:
+  contents: write
+  issues: write
+  id-token: write
+  actions: read
+
+concurrency:
+  group: relevance-build-${{ inputs.app }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ inputs.app }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    outputs:
+      skip: ${{ steps.plan.outputs.skip }}
+    env:
+      APP: ${{ inputs.app }}
+      GITHUB_TOKEN: ${{ github.token }}
+      RELEVANCE_KEYSTORE: ${{ secrets.RELEVANCE_KEYSTORE }}
+      RELEVANCE_KEYSTORE_PASSWORD: ${{ secrets.RELEVANCE_KEYSTORE_PASSWORD }}
+      RELEVANCE_KEY_ALIAS: ${{ secrets.RELEVANCE_KEY_ALIAS }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Plan [plan]
+        id: plan
+        run: node .relevance/engine.mjs plan --app "$APP" --force ${{ inputs.force }} --trigger "${{ inputs.trigger }}"
+      - name: Fetch APK [fetch]
+        if: steps.plan.outputs.skip != 'true'
+        run: node .relevance/engine.mjs fetch --app "$APP"
+      - name: Patch [patch]
+        if: steps.plan.outputs.skip != 'true' && steps.plan.outputs.patch == 'true'
+        run: node .relevance/engine.mjs patch --app "$APP"
+      - name: Decompile & customize [customize]
+        if: steps.plan.outputs.skip != 'true' && steps.plan.outputs.customize == 'true'
+        run: node .relevance/engine.mjs customize --app "$APP"
+      - name: Sign [sign]
+        if: steps.plan.outputs.skip != 'true' && steps.plan.outputs.rebuild == 'true'
+        run: node .relevance/engine.mjs sign --app "$APP"
+      - name: Publish [publish]
+        if: steps.plan.outputs.skip != 'true'
+        run: node .relevance/engine.mjs publish --app "$APP"
+      - name: Nothing to build
+        if: steps.plan.outputs.skip == 'true'
+        run: node .relevance/engine.mjs skipped --app "$APP"
+      - name: Report problem
+        if: failure() || cancelled()
+        run: node .relevance/engine.mjs fail --app "$APP" --status "${{ job.status }}"
+
+  site:
+    name: Publish F-Droid repo and store
+    needs: build
+    if: always() && needs.build.outputs.skip != 'true'
+    uses: ./.github/workflows/relevance-publish.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      pages: write
+      id-token: write

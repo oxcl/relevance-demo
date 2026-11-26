@@ -1,0 +1,57 @@
+# Managed by Relevance (engine 1.0.0). Changes may be overwritten.
+name: Relevance publish
+run-name: Publish F-Droid repository and store site
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: relevance-pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: F-Droid repo and store site
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      RELEVANCE_KEYSTORE: ${{ secrets.RELEVANCE_KEYSTORE }}
+      RELEVANCE_KEYSTORE_PASSWORD: ${{ secrets.RELEVANCE_KEYSTORE_PASSWORD }}
+      RELEVANCE_KEY_ALIAS: ${{ secrets.RELEVANCE_KEY_ALIAS }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: .relevance/engine.version
+      - name: Install fdroidserver
+        run: pip install --quiet fdroidserver
+      - name: Generate F-Droid repository and store site [site]
+        run: node .relevance/engine.mjs site
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+          retention-days: 90
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
