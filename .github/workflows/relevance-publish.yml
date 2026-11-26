@@ -1,4 +1,4 @@
-# Managed by Relevance (engine 1.0.0). Changes may be overwritten.
+# Managed by Relevance (engine 1.0.1). Changes may be overwritten.
 name: Relevance publish
 run-name: Publish F-Droid repository and store site
 
@@ -31,6 +31,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
       - name: Set up Node
         uses: actions/setup-node@v4
         with:

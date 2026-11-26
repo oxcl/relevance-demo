@@ -1,5 +1,5 @@
 // shared/types.ts
-var ENGINE_VERSION = "1.0.0";
+var ENGINE_VERSION = "1.0.1";
 
 // engine/build.ts
 import { copyFileSync, existsSync as existsSync3, mkdirSync as mkdirSync2, readdirSync, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
@@ -2464,7 +2464,11 @@ async function buildSite() {
   if (ksB64) {
     writeFileSync4(`${fd}/keystore.p12`, Buffer.from(ksB64, "base64"));
     let title = cfg.settings.store?.title || `${REPO.split("/")[0]}'s apps`;
-    await assetTo(`${cfg.settings.relevanceUrl}/icon-512.png`, `${fd}/repo/icons/icon.png`), writeFileSync4(`${fd}/config.yml`, [
+    if (await assetTo(`${cfg.settings.relevanceUrl}/icon-512.png`, `${fd}/repo/icons/icon.png`))
+      copyFileSync2(`${fd}/repo/icons/icon.png`, `${fd}/icon.png`);
+    else
+      warn("Could not download the repository icon");
+    writeFileSync4(`${fd}/config.yml`, [
       `repo_url: ${url}/fdroid/repo`,
       `repo_name: ${JSON.stringify(title)}`,
       "repo_icon: icon.png",
