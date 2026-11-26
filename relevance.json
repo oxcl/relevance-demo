@@ -85,6 +85,32 @@
       "createdAt": "2026-11-26T07:51:14.545Z",
       "updatedAt": "2026-11-26T07:51:31.749Z",
       "iconUrl": "https://f-droid.org/repo/de.markusfisch.android.binaryeye/en-US/icon_JCQAH6daJAEg6038ZyKnweYEAYfbht0wrM_VejEpLxg=.png"
+    },
+    {
+      "id": "gmscore",
+      "name": "GmsCore",
+      "packageName": "com.android.vending",
+      "source": {
+        "type": "github",
+        "url": "https://github.com/microg/GmsCore",
+        "assetPattern": "^com\\.android\\.vending-84022636-hw\\.apk$"
+      },
+      "tool": "none",
+      "patches": [],
+      "customPatches": [],
+      "pin": null,
+      "customize": {},
+      "listing": {
+        "summary": "Free implementation of Play Services",
+        "description": "",
+        "category": "System",
+        "website": "https://microg.org",
+        "screenshots": []
+      },
+      "enabled": true,
+      "createdAt": "2026-11-26T07:55:45.855Z",
+      "updatedAt": "2026-11-26T07:56:02.537Z",
+      "iconUrl": "https://avatars.githubusercontent.com/u/2758598?v=4"
     }
   ]
 }
