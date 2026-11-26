@@ -1,14 +1,14 @@
 {
   "appId": "binary-eye-mod",
-  "status": "building",
+  "status": "ok",
   "releases": [
     {
       "version": "1.76.1",
       "versionCode": 184,
       "tag": "binary-eye-mod-1.76.1-7a4852",
-      "date": "2026-11-26T08:14:11.835Z",
+      "date": "2026-11-26T09:24:52.726Z",
       "size": 7670576,
-      "sha256": "28df42b24398c6362c472408fb9b3c6f96e78196d36385c75625419a3bfd1c50",
+      "sha256": "f215984475a1de464967353052b7f33afa7a6b1ccc9890b8f157aace4e0cd70b",
       "apk": "de.markusfisch.android.binaryeye.binaryeyemod_184_7a4852.apk",
       "url": "https://github.com/oxcl/relevance-demo/releases/download/binary-eye-mod-1.76.1-7a4852/de.markusfisch.android.binaryeye.binaryeyemod_184_7a4852.apk",
       "patches": [],
@@ -20,9 +20,10 @@
     {
       "runId": 45791679349,
       "version": "1.76.1",
-      "status": "running",
+      "status": "success",
       "at": "2026-11-26T09:24:38.912Z",
-      "trigger": "manual"
+      "trigger": "manual",
+      "durationMs": 13919
     },
     {
       "runId": 45781367943,
@@ -54,9 +55,9 @@
     "version": "1.76.1",
     "versionCode": 184,
     "tag": "binary-eye-mod-1.76.1-7a4852",
-    "date": "2026-11-26T08:14:11.835Z",
+    "date": "2026-11-26T09:24:52.726Z",
     "size": 7670576,
-    "sha256": "28df42b24398c6362c472408fb9b3c6f96e78196d36385c75625419a3bfd1c50",
+    "sha256": "f215984475a1de464967353052b7f33afa7a6b1ccc9890b8f157aace4e0cd70b",
     "apk": "de.markusfisch.android.binaryeye.binaryeyemod_184_7a4852.apk",
     "url": "https://github.com/oxcl/relevance-demo/releases/download/binary-eye-mod-1.76.1-7a4852/de.markusfisch.android.binaryeye.binaryeyemod_184_7a4852.apk",
     "patches": [],
