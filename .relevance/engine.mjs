@@ -1,10 +1,10 @@
 // shared/types.ts
-var ENGINE_VERSION = "1.1.0";
+var ENGINE_VERSION = "1.2.0";
 
 // engine/build.ts
-import { copyFileSync, existsSync as existsSync3, mkdirSync as mkdirSync2, readdirSync, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
-import { createHash } from "node:crypto";
-import { join } from "node:path";
+import { copyFileSync, existsSync as existsSync4, mkdirSync as mkdirSync3, readdirSync as readdirSync2, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
+import { createHash as createHash2 } from "node:crypto";
+import { join as join2 } from "node:path";
 
 // shared/logic.ts
 function compareVersions(a, b) {
@@ -850,6 +850,50 @@ async function resolveIssues(app) {
   } catch {}
 }
 
+// engine/apkeep.ts
+import { chmodSync, createReadStream, existsSync as existsSync3, mkdirSync as mkdirSync2, readdirSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { join } from "node:path";
+var VERSION = "1.1.0", SHA256 = "badd7ad9fa7d2f32abe01eaf33b7ff086361a95bbc000a33bf44b630d4bf2140", bin = null;
+async function sha256(file) {
+  let h = createHash("sha256");
+  for await (let c of createReadStream(file))
+    h.update(c);
+  return h.digest("hex");
+}
+async function apkeepBin() {
+  if (bin)
+    return bin;
+  let file = join(WORK, "tools", `apkeep-${VERSION}`);
+  if (!existsSync3(file))
+    info(`Downloading apkeep ${VERSION}`), await download(`https://github.com/EFForg/apkeep/releases/download/${VERSION}/apkeep-x86_64-unknown-linux-gnu`, file);
+  let got = await sha256(file);
+  if (got !== SHA256)
+    throw Error(`apkeep checksum mismatch (${got}); refusing to run it`);
+  return chmodSync(file, 493), bin = file, file;
+}
+var listCache = /* @__PURE__ */ new Map;
+async function apkeepVersions(pkg) {
+  if (listCache.has(pkg))
+    return listCache.get(pkg);
+  let line = (await run(await apkeepBin(), ["-l", "-a", pkg, "-d", "apk-pure", "-o", "output_format=json"], { quiet: !0 })).split(`
+`).find((l) => l.trim().startsWith("{")), app = (line ? JSON.parse(line) : null)?.apps?.[pkg];
+  if (!app || app.error)
+    throw Error(`APKPure has no listing for ${pkg}${app?.error ? ` (${app.error})` : ""}`);
+  let versions = sortVersionsDesc((app.available_versions || []).map((v) => String(v.version)));
+  if (!versions.length)
+    throw Error(`APKPure lists no versions for ${pkg}`);
+  return listCache.set(pkg, versions), versions;
+}
+async function apkeepDownload(pkg, version) {
+  let dir = join(WORK, "apkeep");
+  mkdirSync2(dir, { recursive: !0 }), info(`Downloading ${pkg} ${version} from APKPure with apkeep`), await run(await apkeepBin(), ["-a", `${pkg}@${version}`, "-d", "apk-pure", "-o", "acknowledge_dangers=true", dir]);
+  let file = readdirSync(dir).find((f) => f.startsWith(`${pkg}@${version}.`) && /\.(x?apk)$/i.test(f));
+  if (!file)
+    throw Error(`apkeep did not produce ${pkg} ${version}`);
+  return ok(`Got ${file}`), join(dir, file);
+}
+
 // engine/build.ts
 function srcCtx() {
   let resolver = env.RELEVANCE_URL;
@@ -857,6 +901,28 @@ function srcCtx() {
     resolver ||= loadConfig().settings.relevanceUrl;
   } catch {}
   return { fetch: (i, o) => fetch(i, o), githubToken: env.GITHUB_TOKEN, resolver };
+}
+async function sourceVersions(app) {
+  if (app.source.type === "apkpure") {
+    let versions = await apkeepVersions(apkpurePage(app.source.url).pkg);
+    return { versions, latest: versions[0] };
+  }
+  let si = await resolveSource(app.source, srcCtx());
+  return { versions: si.versions, latest: si.latest || si.versions?.[0] };
+}
+async function sourceDownload(app, version) {
+  if (app.source.type === "apkpure") {
+    let pkg = apkpurePage(app.source.url).pkg, versions = await apkeepVersions(pkg), want = version || versions[0];
+    if (!versions.includes(want))
+      throw Object.assign(Error(`APKPure doesn't offer ${pkg} ${want}, which your patches need (newest there: ${versions[0]})`), {
+        attention: "no-compatible-version"
+      });
+    return { url: `apkeep:${pkg}@${want}`, fileName: `${pkg}.apk`, version: want };
+  }
+  let dl = await getDownload(app.source, version, srcCtx());
+  if (version && dl.version !== version && app.source.type === "fdroid")
+    throw Object.assign(Error(`F-Droid doesn't offer version ${version}, which your patches need`), { attention: "no-compatible-version" });
+  return dl;
 }
 var planPath = () => `${WORK}/plan.json`, loadPlan = () => readJson(planPath(), null);
 function getApp(cfg, id) {
@@ -872,11 +938,11 @@ function patchSourceFor(cfg, app) {
   return all.find((s) => s.id === app.patchSourceId && s.tool === app.tool) || all.find((s) => s.builtin && s.tool === app.tool) || null;
 }
 function buildTools() {
-  let sdk = env.ANDROID_HOME || env.ANDROID_SDK_ROOT || "/usr/local/lib/android/sdk", dir = join(sdk, "build-tools"), vers = readdirSync(dir).sort((a, b) => b.localeCompare(a, void 0, { numeric: !0 }));
-  return join(dir, vers[0]);
+  let sdk = env.ANDROID_HOME || env.ANDROID_SDK_ROOT || "/usr/local/lib/android/sdk", dir = join2(sdk, "build-tools"), vers = readdirSync2(dir).sort((a, b) => b.localeCompare(a, void 0, { numeric: !0 }));
+  return join2(dir, vers[0]);
 }
 async function apkInfo(apk) {
-  let out = await run(join(buildTools(), "aapt2"), ["dump", "badging", apk], { quiet: !0 }).catch(async () => run(join(buildTools(), "aapt"), ["dump", "badging", apk], { quiet: !0 })), m = out.match(/package: name='([^']+)' versionCode='(\d+)' versionName='([^']*)'/);
+  let out = await run(join2(buildTools(), "aapt2"), ["dump", "badging", apk], { quiet: !0 }).catch(async () => run(join2(buildTools(), "aapt"), ["dump", "badging", apk], { quiet: !0 })), m = out.match(/package: name='([^']+)' versionCode='(\d+)' versionName='([^']*)'/);
   if (!m)
     throw Error("Could not read the APK manifest");
   return { packageName: m[1], versionCode: Number(m[2]), versionName: m[3], label: out.match(/application-label:'([^']*)'/)?.[1] };
@@ -892,9 +958,11 @@ async function plan(appId, opts) {
       warn(`No patch index for ${ps.name}; version selection falls back to the latest`);
   let available = null;
   try {
-    let si = await resolveSource(app.source, srcCtx());
-    available = si.versions, ok(`Source offers ${available ? available.length + " versions, latest " + (si.latest || available[0]) : "the latest version only"}`);
+    let sv = await sourceVersions(app);
+    available = sv.versions, ok(`Source offers ${available ? available.length + " versions, latest " + (sv.latest || available[0]) : "the latest version only"}`);
   } catch (e) {
+    if (app.source.type === "apkpure")
+      throw e;
     warn(`Could not list source versions: ${shortErr(e)}`);
   }
   if (index && app.tool !== "lspatch") {
@@ -908,10 +976,7 @@ async function plan(appId, opts) {
   if (t.conflict)
     throw Object.assign(Error(t.reason), { attention: "no-compatible-version" });
   log(`Target version: ${t.target ?? "latest"} — ${t.reason}`);
-  let dl = await getDownload(app.source, t.target, srcCtx());
-  if (t.target && dl.version !== t.target && (app.source.type === "apkpure" || app.source.type === "fdroid"))
-    throw Object.assign(Error(`${app.source.type === "apkpure" ? "APKPure" : "F-Droid"} doesn't offer version ${t.target}, which your patches need`), { attention: "no-compatible-version" });
-  let version = dl.version || t.target, same = state.current && version && (state.current.sourceVersion ?? state.current.version) === version && state.configHash === hash && (!index || state.patchVersion === index.version), p = {
+  let dl = await sourceDownload(app, t.target), version = dl.version || t.target, same = state.current && version && (state.current.sourceVersion ?? state.current.version) === version && state.configHash === hash && (!index || state.patchVersion === index.version), p = {
     appId,
     version: version || null,
     reason: t.reason,
@@ -958,11 +1023,17 @@ async function fetchApk(appId) {
   if (!p.download)
     throw Error("Nothing to download");
   let raw = `${WORK}/download.bin`;
-  info(`Fetching ${app.name} ${p.version ?? ""} from ${new URL(p.download.url).host}`);
-  let headers = {};
-  if (app.source.type === "upload" || p.download.url.includes(`github.com/${REPO}/`))
-    headers.Authorization = `Bearer ${env.GITHUB_TOKEN}`;
-  let res = await download(p.download.url, raw, headers), names = zipEntries(raw), looksApk = names.includes("AndroidManifest.xml"), isBundle = !looksApk && names.some((n) => /\.apk$/i.test(n)), input = `${WORK}/input.apk`;
+  if (p.download.url.startsWith("apkeep:")) {
+    let [pkg, ver] = p.download.url.slice(7).split("@");
+    renameSync(await apkeepDownload(pkg, ver), raw);
+  } else {
+    info(`Fetching ${app.name} ${p.version ?? ""} from ${new URL(p.download.url).host}`);
+    let headers = {};
+    if (app.source.type === "upload" || p.download.url.includes(`github.com/${REPO}/`))
+      headers.Authorization = `Bearer ${env.GITHUB_TOKEN}`;
+    await download(p.download.url, raw, headers);
+  }
+  let names = zipEntries(raw), looksApk = names.includes("AndroidManifest.xml"), isBundle = !looksApk && names.some((n) => /\.apk$/i.test(n)), input = `${WORK}/input.apk`;
   if (looksApk)
     renameSync(raw, input);
   else if (isBundle) {
@@ -1009,10 +1080,10 @@ async function patch(appId) {
       warn("No Xposed modules selected; LSPatch will only add the loader");
     let outDir = `${WORK}/lspatch-out`;
     rmSync(outDir, { recursive: !0, force: !0 }), await run("java", ["-jar", jar, input, "-l", "2", "-f", "-o", outDir, ...mods.flatMap((m) => ["-m", m])]);
-    let f = readdirSync(outDir).find((n) => n.endsWith(".apk"));
+    let f = readdirSync2(outDir).find((n) => n.endsWith(".apk"));
     if (!f)
       throw Error("LSPatch produced no output");
-    renameSync(join(outDir, f), out);
+    renameSync(join2(outDir, f), out);
   } else {
     let ps = patchSourceFor(cfg, app);
     if (!ps)
@@ -1042,7 +1113,7 @@ async function patch(appId) {
       args.push("-f");
     args.push("-o", out, "-t", `${WORK}/tmp`, input), log(`Applying ${app.patches.length + custom.length} patches with ${ps.name} ${main.version}`), await run("java", args);
   }
-  if (!existsSync3(out))
+  if (!existsSync4(out))
     throw Error("Patching produced no APK");
   ok(`Patched APK ready (${(statSync(out).size / 1048576).toFixed(1)} MB)`), copyFileSync(out, `${WORK}/current.apk`), writeJson(`${WORK}/patched.json`, { patchVersion: p.patchVersion });
 }
@@ -1083,41 +1154,41 @@ async function customize(appId) {
     return log("No basic modifications — skipping");
   let apktool = await fetchCli("apktool"), dec = `${WORK}/decoded`;
   rmSync(dec, { recursive: !0, force: !0 }), info("Decompiling resources (code stays untouched)"), await run("java", ["-jar", apktool, "d", "-f", "-s", "-o", dec, `${WORK}/current.apk`]);
-  let meta = readJson(`${WORK}/input.json`, { packageName: app.packageName }), manifestPath = join(dec, "AndroidManifest.xml"), xml = readFileSync3(manifestPath, "utf8"), curPkg = xml.match(/<manifest\b[^>]*package="([^"]+)"/)?.[1] || meta.packageName, resDir = join(dec, "res");
-  for (let d of existsSync3(resDir) ? readdirSync(resDir) : []) {
-    let dir = join(resDir, d);
-    for (let f of readdirSync(dir))
+  let meta = readJson(`${WORK}/input.json`, { packageName: app.packageName }), manifestPath = join2(dec, "AndroidManifest.xml"), xml = readFileSync3(manifestPath, "utf8"), curPkg = xml.match(/<manifest\b[^>]*package="([^"]+)"/)?.[1] || meta.packageName, resDir = join2(dec, "res");
+  for (let d of existsSync4(resDir) ? readdirSync2(resDir) : []) {
+    let dir = join2(resDir, d);
+    for (let f of readdirSync2(dir))
       if (f.startsWith("relevance_icon"))
-        rmSync(join(dir, f));
+        rmSync(join2(dir, f));
       else if (d.startsWith("values") && f.endsWith(".xml") && f !== "public.xml") {
-        let t = readFileSync3(join(dir, f), "utf8"), n = t.replace(/^\s*<(color|drawable|mipmap)\s+name="relevance_icon[^"]*"[^>]*(?:\/>|>[^<]*<\/\1>)\s*$/gm, "");
+        let t = readFileSync3(join2(dir, f), "utf8"), n = t.replace(/^\s*<(color|drawable|mipmap)\s+name="relevance_icon[^"]*"[^>]*(?:\/>|>[^<]*<\/\1>)\s*$/gm, "");
         if (n !== t)
-          writeFileSync2(join(dir, f), n);
+          writeFileSync2(join2(dir, f), n);
       }
   }
   if (c.icon) {
     let iconFile = c.icon.path;
-    if (!existsSync3(iconFile))
+    if (!existsSync4(iconFile))
       throw Error(`Icon ${iconFile} not found in repository`);
     for (let d of ["mipmap-xxxhdpi", "mipmap-anydpi-v26", "values"])
-      mkdirSync2(join(dec, "res", d), { recursive: !0 });
-    copyFileSync(iconFile, join(dec, "res/mipmap-xxxhdpi/relevance_icon_legacy.png"));
+      mkdirSync3(join2(dec, "res", d), { recursive: !0 });
+    copyFileSync(iconFile, join2(dec, "res/mipmap-xxxhdpi/relevance_icon_legacy.png"));
     let fg = iconFile.replace(/\.png$/, "-fg.png");
-    if (existsSync3(fg)) {
-      copyFileSync(fg, join(dec, "res/mipmap-xxxhdpi/relevance_icon_fg.png"));
+    if (existsSync4(fg)) {
+      copyFileSync(fg, join2(dec, "res/mipmap-xxxhdpi/relevance_icon_fg.png"));
       let bg = readJson(iconFile.replace(/\.png$/, ".json"), {}).background || "#FFFFFF";
-      writeFileSync2(join(dec, "res/values/relevance_icon.xml"), `<?xml version="1.0" encoding="utf-8"?>
+      writeFileSync2(join2(dec, "res/values/relevance_icon.xml"), `<?xml version="1.0" encoding="utf-8"?>
 <resources>
   <color name="relevance_icon_bg">${bg}</color>
 </resources>
-`), writeFileSync2(join(dec, "res/mipmap-anydpi-v26/relevance_icon.xml"), `<?xml version="1.0" encoding="utf-8"?>
+`), writeFileSync2(join2(dec, "res/mipmap-anydpi-v26/relevance_icon.xml"), `<?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
   <background android:drawable="@color/relevance_icon_bg"/>
   <foreground android:drawable="@mipmap/relevance_icon_fg"/>
 </adaptive-icon>
-`), copyFileSync(iconFile, join(dec, "res/mipmap-xxxhdpi/relevance_icon.png")), rmSync(join(dec, "res/mipmap-xxxhdpi/relevance_icon_legacy.png"));
+`), copyFileSync(iconFile, join2(dec, "res/mipmap-xxxhdpi/relevance_icon.png")), rmSync(join2(dec, "res/mipmap-xxxhdpi/relevance_icon_legacy.png"));
     } else
-      renameSync(join(dec, "res/mipmap-xxxhdpi/relevance_icon_legacy.png"), join(dec, "res/mipmap-xxxhdpi/relevance_icon.png"));
+      renameSync(join2(dec, "res/mipmap-xxxhdpi/relevance_icon_legacy.png"), join2(dec, "res/mipmap-xxxhdpi/relevance_icon.png"));
     ok("Installed the new launcher icon");
   }
   let next = rewriteManifest(xml, { oldPkg: curPkg, newPkg: c.packageName, label: c.name, icon: Boolean(c.icon) });
@@ -1133,7 +1204,7 @@ async function sign(appId) {
     throw Error("Signing key secret RELEVANCE_KEYSTORE is missing — open Relevance settings to set it up");
   writeFileSync2(ks, Buffer.from(env.RELEVANCE_KEYSTORE, "base64"));
   let aligned = `${WORK}/aligned.apk`, signed = `${WORK}/signed.apk`;
-  info("Aligning"), await run(join(bt, "zipalign"), ["-p", "-f", "4", `${WORK}/current.apk`, aligned], { quiet: !0 }), info("Signing with your repository key (v1 + v2 + v3)"), await run(join(bt, "apksigner"), [
+  info("Aligning"), await run(join2(bt, "zipalign"), ["-p", "-f", "4", `${WORK}/current.apk`, aligned], { quiet: !0 }), info("Signing with your repository key (v1 + v2 + v3)"), await run(join2(bt, "apksigner"), [
     "sign",
     "--ks",
     ks,
@@ -1155,7 +1226,7 @@ async function sign(appId) {
     signed,
     aligned
   ]);
-  let fp = (await run(join(bt, "apksigner"), ["verify", "--print-certs", signed], { quiet: !0 })).match(/SHA-256 digest: ([0-9a-f]+)/)?.[1];
+  let fp = (await run(join2(bt, "apksigner"), ["verify", "--print-certs", signed], { quiet: !0 })).match(/SHA-256 digest: ([0-9a-f]+)/)?.[1];
   ok(`Signed${fp ? ` — certificate ${fp.slice(0, 16)}…` : ""}`), copyFileSync(signed, `${WORK}/current.apk`), rmSync(ks);
 }
 async function uploadAsset(uploadUrl, file, name) {
@@ -1174,7 +1245,7 @@ async function uploadAsset(uploadUrl, file, name) {
   return await r.json();
 }
 async function publish(appId) {
-  let cfg = loadConfig(), app = getApp(cfg, appId), p = loadPlan(), file = `${WORK}/current.apk`, meta = await apkInfo(file), size = statSync(file).size, sha256 = createHash("sha256").update(readFileSync3(file)).digest("hex"), tag = `${app.id}-${meta.versionName.replace(/[^\w.-]/g, "_")}-${p.configHash.slice(0, 6)}`, apkName = `${meta.packageName}_${meta.versionCode}_${p.configHash.slice(0, 6)}.apk`;
+  let cfg = loadConfig(), app = getApp(cfg, appId), p = loadPlan(), file = `${WORK}/current.apk`, meta = await apkInfo(file), size = statSync(file).size, sha256 = createHash2("sha256").update(readFileSync3(file)).digest("hex"), tag = `${app.id}-${meta.versionName.replace(/[^\w.-]/g, "_")}-${p.configHash.slice(0, 6)}`, apkName = `${meta.packageName}_${meta.versionCode}_${p.configHash.slice(0, 6)}.apk`;
   info(`Publishing ${apkName} as release ${tag}`);
   let rel;
   try {
@@ -1264,7 +1335,7 @@ function recordError(step, e) {
 }
 
 // engine/check.ts
-import { writeFileSync as writeFileSync3, mkdirSync as mkdirSync3 } from "node:fs";
+import { writeFileSync as writeFileSync3, mkdirSync as mkdirSync4 } from "node:fs";
 async function indexCustomSources() {
   let cfg = loadConfig();
   for (let src of cfg.patchSources.filter((s) => !s.builtin))
@@ -1272,13 +1343,13 @@ async function indexCustomSources() {
       info(`Indexing ${src.name}`);
       let idx = await indexSource(src);
       await putFile(`.relevance/index/${src.id}.json`, () => JSON.stringify(idx, null, 1) + `
-`, `relevance: index ${src.name} ${idx.version}`), mkdirSync3(".relevance/index", { recursive: !0 }), writeFileSync3(`.relevance/index/${src.id}.json`, JSON.stringify(idx)), ok(`${src.name}: ${idx.patches.length} patches (${idx.version})`);
+`, `relevance: index ${src.name} ${idx.version}`), mkdirSync4(".relevance/index", { recursive: !0 }), writeFileSync3(`.relevance/index/${src.id}.json`, JSON.stringify(idx)), ok(`${src.name}: ${idx.patches.length} patches (${idx.version})`);
     } catch (e) {
       warn(`Could not index ${src.name}: ${shortErr(e)}`);
     }
 }
 async function indexBuiltin(outDir) {
-  mkdirSync3(outDir, { recursive: !0 });
+  mkdirSync4(outDir, { recursive: !0 });
   for (let src of BUILTIN_SOURCES)
     try {
       let idx = await indexSource(src);
@@ -1315,12 +1386,12 @@ async function checkUpdates(only) {
       }
       let available = null, latest, auto = sourceAutoUpdates(app.source.type);
       if (auto) {
-        let si = await resolveSource(app.source, srcCtx());
-        available = si.versions, latest = si.latest || si.versions?.[0];
+        let sv = await sourceVersions(app);
+        available = sv.versions, latest = sv.latest;
       }
       let t = pickTarget(app.tool === "revanced" || app.tool === "morphe" ? index : null, app.packageName, app.patches, available, app.pin), target = t.target;
       if (!target && auto)
-        target = (await getDownload(app.source, null, srcCtx())).version || null;
+        target = (await sourceDownload(app, null)).version || null;
       let changed = !st.current || st.configHash !== hash || index && st.patchVersion !== index.version || auto && target && target !== (st.current.sourceVersion ?? st.current.version);
       if (await updateState(app.id, (s) => {
         s.checkedAt = (/* @__PURE__ */ new Date()).toISOString(), s.latestAvailable = latest, s.targetVersion = target || void 0;
@@ -1348,8 +1419,8 @@ async function checkUpdates(only) {
 }
 
 // engine/site.ts
-import { copyFileSync as copyFileSync2, existsSync as existsSync4, mkdirSync as mkdirSync4, readdirSync as readdirSync2, rmSync as rmSync2, statSync as statSync2, writeFileSync as writeFileSync4 } from "node:fs";
-import { join as join2 } from "node:path";
+import { copyFileSync as copyFileSync2, existsSync as existsSync5, mkdirSync as mkdirSync5, readdirSync as readdirSync3, rmSync as rmSync2, statSync as statSync2, writeFileSync as writeFileSync4 } from "node:fs";
+import { join as join3 } from "node:path";
 
 // node_modules/qrcode-generator/dist/qrcode.mjs
 var qrcode = function(typeNumber, errorCorrectionLevel) {
@@ -2513,9 +2584,9 @@ function finalPackage(app, st) {
 }
 async function buildSite() {
   let cfg = loadConfig(), url = pagesUrl(cfg);
-  rmSync2(OUT, { recursive: !0, force: !0 }), mkdirSync4(`${OUT}/assets`, { recursive: !0 });
+  rmSync2(OUT, { recursive: !0, force: !0 }), mkdirSync5(`${OUT}/assets`, { recursive: !0 });
   let fd = "fdroid-work";
-  rmSync2(fd, { recursive: !0, force: !0 }), mkdirSync4(`${fd}/repo`, { recursive: !0 }), mkdirSync4(`${fd}/metadata`, { recursive: !0 });
+  rmSync2(fd, { recursive: !0, force: !0 }), mkdirSync5(`${fd}/repo`, { recursive: !0 }), mkdirSync5(`${fd}/metadata`, { recursive: !0 });
   let apps = cfg.apps.map((a) => ({ app: a, st: loadState(a.id) })).filter(({ st }) => st.releases?.length);
   info(`Generating store for ${apps.length} published app(s) → ${url}`);
   for (let { app, st } of apps) {
@@ -2541,7 +2612,7 @@ async function buildSite() {
 `);
     writeFileSync4(`${fd}/metadata/${pkg}.yml`, yml);
     let loc = `${fd}/metadata/${pkg}/en-US`;
-    mkdirSync4(`${loc}/phoneScreenshots`, { recursive: !0 }), await assetTo(app.customize?.icon?.path || app.iconUrl, `${loc}/icon.png`);
+    mkdirSync5(`${loc}/phoneScreenshots`, { recursive: !0 }), await assetTo(app.customize?.icon?.path || app.iconUrl, `${loc}/icon.png`);
     let i = 1;
     for (let s of app.listing?.screenshots || [])
       await assetTo(s, `${loc}/phoneScreenshots/${i++}.png`);
@@ -2570,7 +2641,7 @@ async function buildSite() {
     ].join(`
 `));
     try {
-      await run("fdroid", ["update", "--pretty", "--use-date-from-apk", "--create-metadata"], { cwd: fd }), rmSync2(`${fd}/keystore.p12`), mkdirSync4(`${OUT}/fdroid`, { recursive: !0 }), await run("cp", ["-r", `${fd}/repo`, `${OUT}/fdroid/repo`], { quiet: !0 }), ok("F-Droid repository index signed and generated");
+      await run("fdroid", ["update", "--pretty", "--use-date-from-apk", "--create-metadata"], { cwd: fd }), rmSync2(`${fd}/keystore.p12`), mkdirSync5(`${OUT}/fdroid`, { recursive: !0 }), await run("cp", ["-r", `${fd}/repo`, `${OUT}/fdroid/repo`], { quiet: !0 }), ok("F-Droid repository index signed and generated");
     } catch (e) {
       warn(`F-Droid index generation failed: ${e.message}`);
     }
@@ -2580,7 +2651,7 @@ async function buildSite() {
   let fdroidUrl = `${url}/fdroid/repo`, fingerprint = cfg.settings.signing?.fingerprint?.replace(/[^0-9A-Fa-f]/g, "").toUpperCase(), fdroidAdd = fingerprint ? `${fdroidUrl}?fingerprint=${fingerprint}` : fdroidUrl, cards = [];
   for (let { app, st } of apps) {
     let dir = `${OUT}/apps/${app.id}`;
-    mkdirSync4(`${dir}/shots`, { recursive: !0 });
+    mkdirSync5(`${dir}/shots`, { recursive: !0 });
     let icon = await assetTo(app.customize?.icon?.path || app.iconUrl, `${dir}/icon.png`) ? "icon.png" : "../../assets/icon.png", shots = [], i = 1;
     for (let s of app.listing?.screenshots || []) {
       let ext = /\.(jpe?g)$/i.test(s) ? "jpg" : /\.webp$/i.test(s) ? "webp" : "png";
@@ -2597,8 +2668,8 @@ async function buildSite() {
 }
 function dirSize(d) {
   let n = 0;
-  for (let f of readdirSync2(d, { withFileTypes: !0 })) {
-    let p = join2(d, f.name);
+  for (let f of readdirSync3(d, { withFileTypes: !0 })) {
+    let p = join3(d, f.name);
     n += f.isDirectory() ? dirSize(p) : statSync2(p).size;
   }
   return n;
@@ -2607,9 +2678,9 @@ async function assetTo(src, dest) {
   if (!src)
     return !1;
   try {
-    if (mkdirSync4(join2(dest, ".."), { recursive: !0 }), /^https?:/.test(src))
+    if (mkdirSync5(join3(dest, ".."), { recursive: !0 }), /^https?:/.test(src))
       await download(src, dest);
-    else if (existsSync4(src))
+    else if (existsSync5(src))
       copyFileSync2(src, dest);
     else
       return !1;
