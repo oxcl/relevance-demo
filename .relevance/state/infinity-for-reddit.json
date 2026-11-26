@@ -1,14 +1,14 @@
 {
   "appId": "infinity-for-reddit",
-  "status": "building",
+  "status": "ok",
   "releases": [
     {
       "version": "8.4.0",
       "versionCode": 234,
       "tag": "infinity-for-reddit-8.4.0-0c417f",
-      "date": "2026-11-26T08:10:09.257Z",
+      "date": "2026-11-26T08:19:22.482Z",
       "size": 21313013,
-      "sha256": "29f7a9627db01d8785e88425e76711d39ec3f5da84360517adc948de064c0461",
+      "sha256": "5018888d530715dc4fd305ad140b8491f5cd4e094de16f5470405b0a2812bbcb",
       "apk": "ml.docilealligator.infinityforreddit.plus_234_0c417f.apk",
       "url": "https://github.com/oxcl/relevance-demo/releases/download/infinity-for-reddit-8.4.0-0c417f/ml.docilealligator.infinityforreddit.plus_234_0c417f.apk",
       "patches": [
@@ -24,9 +24,10 @@
     {
       "runId": 45782119871,
       "version": "8.4.0",
-      "status": "running",
+      "status": "success",
       "at": "2026-11-26T08:19:06.004Z",
-      "trigger": "manual"
+      "trigger": "manual",
+      "durationMs": 16601
     },
     {
       "runId": 45781656633,
@@ -49,9 +50,9 @@
     "version": "8.4.0",
     "versionCode": 234,
     "tag": "infinity-for-reddit-8.4.0-0c417f",
-    "date": "2026-11-26T08:10:09.257Z",
+    "date": "2026-11-26T08:19:22.482Z",
     "size": 21313013,
-    "sha256": "29f7a9627db01d8785e88425e76711d39ec3f5da84360517adc948de064c0461",
+    "sha256": "5018888d530715dc4fd305ad140b8491f5cd4e094de16f5470405b0a2812bbcb",
     "apk": "ml.docilealligator.infinityforreddit.plus_234_0c417f.apk",
     "url": "https://github.com/oxcl/relevance-demo/releases/download/infinity-for-reddit-8.4.0-0c417f/ml.docilealligator.infinityforreddit.plus_234_0c417f.apk",
     "patches": [
@@ -64,14 +65,7 @@
   },
   "configHash": "0c417f71a3b4a217",
   "patchVersion": "v6.2.1",
-  "attention": {
-    "kind": "selection-changed",
-    "message": "Selected patches no longer exist in ReVanced v6.2.1: Patch that was removed upstream",
-    "at": "2026-11-26T08:15:48.512Z",
-    "details": [
-      "Selected patches no longer exist in ReVanced v6.2.1: Patch that was removed upstream"
-    ]
-  },
+  "attention": null,
   "checkedAt": "2026-11-26T08:12:10.076Z",
   "latestAvailable": "8.4.0"
 }
