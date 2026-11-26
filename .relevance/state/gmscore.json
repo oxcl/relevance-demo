@@ -1,15 +1,43 @@
 {
   "appId": "gmscore",
-  "status": "building",
-  "releases": [],
+  "status": "ok",
+  "releases": [
+    {
+      "version": "0.3.18.40226-hw",
+      "versionCode": 84022636,
+      "tag": "gmscore-0.3.18.40226-hw-afee67",
+      "date": "2026-11-26T07:56:26.489Z",
+      "size": 4214195,
+      "sha256": "290a86f23e51cd9dabc3dd23270fa3251434b890c5a11825c728bf21abfe7969",
+      "apk": "com.android.vending_84022636_afee67.apk",
+      "url": "https://github.com/oxcl/relevance-demo/releases/download/gmscore-0.3.18.40226-hw-afee67/com.android.vending_84022636_afee67.apk",
+      "patches": [],
+      "tool": "none"
+    }
+  ],
   "history": [
     {
       "runId": 45779030711,
-      "version": "0.3.18.252432",
-      "status": "running",
+      "version": "0.3.18.40226-hw",
+      "status": "success",
       "at": "2026-11-26T07:56:20.733Z",
-      "trigger": "manual"
+      "trigger": "manual",
+      "durationMs": 5901
     }
   ],
-  "targetVersion": "0.3.18.252432"
+  "targetVersion": "0.3.18.252432",
+  "current": {
+    "version": "0.3.18.40226-hw",
+    "versionCode": 84022636,
+    "tag": "gmscore-0.3.18.40226-hw-afee67",
+    "date": "2026-11-26T07:56:26.489Z",
+    "size": 4214195,
+    "sha256": "290a86f23e51cd9dabc3dd23270fa3251434b890c5a11825c728bf21abfe7969",
+    "apk": "com.android.vending_84022636_afee67.apk",
+    "url": "https://github.com/oxcl/relevance-demo/releases/download/gmscore-0.3.18.40226-hw-afee67/com.android.vending_84022636_afee67.apk",
+    "patches": [],
+    "tool": "none"
+  },
+  "configHash": "afee67df355fb55a",
+  "attention": null
 }
