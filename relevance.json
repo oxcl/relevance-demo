@@ -209,6 +209,243 @@
       "createdAt": "2026-11-26T08:32:09.643Z",
       "updatedAt": "2026-11-26T08:32:25.530Z",
       "iconUrl": ".relevance/apps/scanner-clone/source-icon.png"
+    },
+    {
+      "id": "reddit",
+      "name": "Reddit",
+      "packageName": "com.reddit.frontpage",
+      "source": {
+        "type": "apkpure",
+        "url": "https://apkpure.com/reddit/com.reddit.frontpage"
+      },
+      "tool": "morphe",
+      "patches": [
+        {
+          "name": "Always show Hide"
+        },
+        {
+          "name": "App icon"
+        },
+        {
+          "name": "AutoModerator comments"
+        },
+        {
+          "name": "Collapse all comments"
+        },
+        {
+          "name": "Colorize comment indent lines"
+        },
+        {
+          "name": "Copy text"
+        },
+        {
+          "name": "Custom font"
+        },
+        {
+          "name": "Customize post layout"
+        },
+        {
+          "name": "Disable bottom bar auto-hide"
+        },
+        {
+          "name": "Disable home feed auto-refresh"
+        },
+        {
+          "name": "Disable modern home"
+        },
+        {
+          "name": "Disable post detail swipe"
+        },
+        {
+          "name": "Disable refresh on back to exit"
+        },
+        {
+          "name": "Disable screenshot popup"
+        },
+        {
+          "name": "Download all from gallery"
+        },
+        {
+          "name": "Download location"
+        },
+        {
+          "name": "Enable debugging"
+        },
+        {
+          "name": "Feed auto-scroll"
+        },
+        {
+          "name": "Feed media max height"
+        },
+        {
+          "name": "Flair filters"
+        },
+        {
+          "name": "Force system font"
+        },
+        {
+          "name": "Full width feed media"
+        },
+        {
+          "name": "Full-screen reply"
+        },
+        {
+          "name": "Glass navigation bar"
+        },
+        {
+          "name": "Hide Answers preview"
+        },
+        {
+          "name": "Hide Ask button"
+        },
+        {
+          "name": "Hide People also search for section"
+        },
+        {
+          "name": "Hide Related Posts section"
+        },
+        {
+          "name": "Hide Trending shelves"
+        },
+        {
+          "name": "Hide Videos for you shelf"
+        },
+        {
+          "name": "Hide ads"
+        },
+        {
+          "name": "Hide comment flairs and badges"
+        },
+        {
+          "name": "Hide communities shelf"
+        },
+        {
+          "name": "Hide community highlights"
+        },
+        {
+          "name": "Hide community menu badge"
+        },
+        {
+          "name": "Hide home tabs"
+        },
+        {
+          "name": "Hide interactive posts"
+        },
+        {
+          "name": "Hide media viewer components"
+        },
+        {
+          "name": "Hide navigation buttons"
+        },
+        {
+          "name": "Hide post buttons"
+        },
+        {
+          "name": "Hide sidebar components"
+        },
+        {
+          "name": "High quality avatars"
+        },
+        {
+          "name": "Home feed tabs"
+        },
+        {
+          "name": "Keep feed position"
+        },
+        {
+          "name": "Keep media viewer in subreddit"
+        },
+        {
+          "name": "Keyword filters"
+        },
+        {
+          "name": "Media viewer black background"
+        },
+        {
+          "name": "Media viewer fade"
+        },
+        {
+          "name": "Open links directly"
+        },
+        {
+          "name": "Open links externally"
+        },
+        {
+          "name": "Open system share sheet"
+        },
+        {
+          "name": "Post side panel"
+        },
+        {
+          "name": "Private browsing mode"
+        },
+        {
+          "name": "Redgifs audio"
+        },
+        {
+          "name": "Remember collapsed comments"
+        },
+        {
+          "name": "Remove subreddit dialog"
+        },
+        {
+          "name": "Sanitize sharing links"
+        },
+        {
+          "name": "Search hidden profiles"
+        },
+        {
+          "name": "See-through status bar"
+        },
+        {
+          "name": "Settings in sidebar"
+        },
+        {
+          "name": "Share post content"
+        },
+        {
+          "name": "Show flairs in home feed"
+        },
+        {
+          "name": "Spoof signature"
+        },
+        {
+          "name": "Start as guest"
+        },
+        {
+          "name": "Swipe up for comments"
+        },
+        {
+          "name": "Tablet grid feed"
+        },
+        {
+          "name": "Video playback speed"
+        }
+      ],
+      "customPatches": [],
+      "pin": null,
+      "customize": {},
+      "listing": {
+        "summary": "Reddit brings together millions of people in over one hundred thousand communiti",
+        "description": "<p>Reddit brings together millions of people in over one hundred thousand communities where users share links, text posts, images, and videos. The mobile app focuses your feed around interests you choose so you can discover trends, ask questions, and join conversations that matter to you. You can browse familiar communities such as r/AskReddit, r/funny, r/gaming, r/worldnews, and r/todayilearned, and you can follow what people are talking about in real time. The app also supports posting and commenting on the go so you stay engaged wherever you are.Features you will use every dayExplore thousands of communitiesReddit organizes content into communities for every interest. You can subscribe to topics you enjoy and your home feed updates with new posts from those communities so discovery stays relevant to you.Vote-driven discovery and sortingReddit uses upvotes and downvotes to surface quality posts and comments. You can sort by Best, Hot, New, Top, or Rising to see what is trending, what is fresh, or what has stood the test of time.Post text, images, and videos plus AMAsReddit supports many post types so you can share text, photos, videos, and memes easily. You can also join Ask Me Anything sessions with creators and experts to read questions and participate in the discussion.Anonymous profiles and controlReddit lets you create an anonymous profile without using your real name. You can choose what to share, adjust visibility, and keep sensitive details private while you ask for advice or discuss topics openly.Real-time news and moderated discussionsReddit helps you follow breaking stories and active threads with live comment updates. Community moderators and reporting tools help keep discussions on topic and organized for easier reading.Optional Reddit PremiumReddit offers a Premium membership for an ad-free experience along with avatar gear, r/lounge access, and custom app icons. You can use Reddit without Premium or upgrade if those extras are useful to you.How Reddit curates your feedYour home feed blends posts from communities you join and recommendations based on your activity. Upvotes, downvotes, and your subscriptions shape what appears first so the experience learns from what you prefer. You can also change the sort to Best, Hot, New, Top, or Rising, and for Top you can choose a time range to see leading posts today, this week, or all time.Staying safe on RedditReddit gives you tools to stay in control of your experience. You can manage privacy settings, limit who can message you, and filter content you do not want to see. If you find rule-breaking posts or comments, you can report them for moderator review. You can also block users and adjust your profile to keep your activity limited to what you are comfortable sharing.Community rules and moderation in RedditEvery community on Reddit has its own rules, and volunteer moderators help maintain quality by removing off-topic or harmful content. Sitewide rules also apply across all communities. Reading the rules in the sidebar before you post helps your content stay visible and reduces the chance of removal, which keeps discussions productive for everyone.Quick start guide for RedditThis short guide helps you begin using Reddit on mobile.Download Reddit APK latest version from APKPure, install it on your device, and open the app to start.Sign in or create an account, then pick interests to help personalize your feed. After that, follow a few suggested communities to fill your home screen with relevant posts.Use Search to find communities such as r/AskReddit, r/funny, or r/worldnews and tap Join to subscribe. Then, switch the sort at the top of the feed to Best, Hot, New, Top, or Rising to change how posts are ordered.Tap a post to read comments, upvote or downvote, and save items for later. So, when you are ready to share, tap Create a Post, choose text, image, video, or link, and follow the community rules before posting.Open Settings to manage notifications, autoplay, content preferences, and privacy controls. You can also review your profile and adjust what others can see.Download Reddit APK and start exploringReddit helps you discover communities, vote on quality content, and join conversations that match your interests. For fast and secure access, get the Reddit app download on APKPure and keep Reddit APK updated with the latest version.For official resources and help, visit:Website: https://www.reddit.comSupport: Reddit Help CenterFAQsWhat is the Reddit app used for?The Reddit app is used to browse communities, read posts, and join conversations on topics you care about. Reddit organizes content into subreddits so you can follow interests such as gaming, news, or learning and use voting to surface the best discussions.Why is Reddit so popular?Reddit is popular because it combines topic-focused communities with a vote-driven system that highlights useful posts and comments. People value the range of subreddits, the option to participate anonymously, and the timely discussions around news, hobbies, and AMAs with creators and experts.Is Reddit a good or bad app?Reddit is a tool, and your experience depends on how you use it. Following relevant communities, using voting and reporting, and managing privacy and content settings helps keep your feed useful while reducing exposure to posts you do not want to see.</p>",
+        "category": "System",
+        "website": "https://apkpure.com/reddit/com.reddit.frontpage",
+        "screenshots": [
+          "https://image-eo.winudf.com/v2/image1/Y29tLnJlZGRpdC5mcm9udHBhZ2Vfc2NyZWVuXzBfMTc5NDA0MzY3MV8wOTM/screen-0.jpg",
+          "https://image-eo.winudf.com/v2/image1/Y29tLnJlZGRpdC5mcm9udHBhZ2Vfc2NyZWVuXzFfMTc5NDA0MzY3Ml8wMjc/screen-1.jpg",
+          "https://image-eo.winudf.com/v2/image1/Y29tLnJlZGRpdC5mcm9udHBhZ2Vfc2NyZWVuXzJfMTc5NDA0MzY3M18wMTU/screen-2.jpg",
+          "https://image-eo.winudf.com/v2/image1/Y29tLnJlZGRpdC5mcm9udHBhZ2Vfc2NyZWVuXzNfMTc5NDA0MzY3NF8wMTU/screen-3.jpg",
+          "https://image-eo.winudf.com/v2/image1/Y29tLnJlZGRpdC5mcm9udHBhZ2Vfc2NyZWVuXzRfMTc5NDA0MzY3NV8wNzA/screen-4.jpg",
+          "https://image-eo.winudf.com/v2/image1/Y29tLnJlZGRpdC5mcm9udHBhZ2Vfc2NyZWVuXzVfMTc5NDA0MzY3NV8wNTE/screen-5.jpg",
+          "https://image-eo.winudf.com/v2/image1/Y29tLnJlZGRpdC5mcm9udHBhZ2Vfc2NyZWVuXzZfMTc5NDA0MzY3Nl8wODI/screen-6.jpg",
+          "https://image-eo.winudf.com/v2/image1/Y29tLnJlZGRpdC5mcm9udHBhZ2Vfc2NyZWVuXzdfMTc5NDA0MzY3N18wMDU/screen-7.jpg"
+        ]
+      },
+      "enabled": true,
+      "createdAt": "2026-11-26T08:37:42.725Z",
+      "updatedAt": "2026-11-26T08:38:02.903Z",
+      "iconUrl": "https://image-eo.winudf.com/v2/image1/Y29tLnJlZGRpdC5mcm9udHBhZ2VfaWNvbl8xNzgxNTYwOTQ1XzA2Mg/icon.png?w=140&fakeurl=1",
+      "patchSourceId": "morphe"
     }
   ]
 }
