@@ -1,8 +1,15 @@
 {
   "appId": "scanner-clone",
-  "status": "failed",
+  "status": "building",
   "releases": [],
   "history": [
+    {
+      "runId": 45784462718,
+      "version": "1.76.1",
+      "status": "running",
+      "at": "2026-11-26T08:35:39.782Z",
+      "trigger": "manual"
+    },
     {
       "runId": 45784061575,
       "version": "1.76.1",
