@@ -1,14 +1,15 @@
 {
   "appId": "reddit",
-  "status": "building",
+  "status": "failed",
   "releases": [],
   "history": [
     {
       "runId": 45785315366,
       "version": "2026.40.0",
-      "status": "running",
+      "status": "failure",
       "at": "2026-11-26T08:41:44.171Z",
-      "trigger": "manual"
+      "trigger": "manual",
+      "error": "/usr/local/lib/android/sdk/build-tools/37.0.0/aapt exited with code 1"
     },
     {
       "runId": 45784837807,
@@ -23,10 +24,10 @@
   "attention": {
     "kind": "build-failed",
     "message": "Building version 2026.40.0 failed during \"fetch\". The last good build stays published.",
-    "at": "2026-11-26T08:38:23.564Z",
+    "at": "2026-11-26T08:41:52.308Z",
     "version": "2026.40.0",
     "details": [
-      "Download failed (403) for https://d.apkpure.com/b/APK/com.reddit.frontpage?version=2026.40.0"
+      "/usr/local/lib/android/sdk/build-tools/37.0.0/aapt exited with code 1"
     ]
   }
 }
