@@ -11,7 +11,7 @@
     },
     "store": {
       "title": "oxcl's apps",
-      "description": "A small, honest collection of apps \u2014 kept up to date automatically."
+      "description": "A small, honest collection of apps — kept up to date automatically."
     },
     "relevanceUrl": "https://relevance.cocoparrot-backend.workers.dev",
     "signing": {
@@ -128,9 +128,6 @@
         },
         {
           "name": "Unlock subscription"
-        },
-        {
-          "name": "Patch that was removed upstream"
         }
       ],
       "customPatches": [],
@@ -145,7 +142,7 @@
       },
       "enabled": true,
       "createdAt": "2026-11-26T08:09:11.148Z",
-      "updatedAt": "2026-11-26T08:09:32.474Z",
+      "updatedAt": "2026-11-26T08:18:49.933Z",
       "iconUrl": "https://avatars.githubusercontent.com/u/25734209?v=4",
       "patchSourceId": "revanced"
     }
