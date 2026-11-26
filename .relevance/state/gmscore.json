@@ -1,6 +1,6 @@
 {
   "appId": "gmscore",
-  "status": "ok",
+  "status": "building",
   "releases": [
     {
       "version": "0.3.18.40226-hw",
@@ -16,6 +16,13 @@
     }
   ],
   "history": [
+    {
+      "runId": 45781173478,
+      "version": "0.3.18.252432",
+      "status": "running",
+      "at": "2026-11-26T08:12:24.032Z",
+      "trigger": "schedule"
+    },
     {
       "runId": 45779030711,
       "version": "0.3.18.40226-hw",
