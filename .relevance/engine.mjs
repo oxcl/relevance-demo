@@ -1,5 +1,5 @@
 // shared/types.ts
-var ENGINE_VERSION = "1.3.0";
+var ENGINE_VERSION = "1.3.1";
 
 // engine/build.ts
 import { copyFileSync, existsSync as existsSync4, mkdirSync as mkdirSync3, readdirSync as readdirSync2, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
@@ -215,19 +215,26 @@ async function resolveSource(src, ctx) {
       let html = res.ok ? await res.text() : "", ld = null;
       for (let m of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g))
         try {
-          let j = JSON.parse(m[1]);
-          ld = (Array.isArray(j) ? j : [j]).find((x) => x["@type"] === "MobileApplication") || ld;
+          let j = JSON.parse(m[1]), flat = (x) => Array.isArray(x) ? x.flatMap(flat) : x && typeof x === "object" ? [x, ...flat(x["@graph"] || [])] : [];
+          ld = flat(j).find((x) => [].concat(x["@type"] || []).some((t) => /Application$/.test(t))) || ld;
         } catch {}
-      let latest = html.match(/data-dt-version="([^"]+)"/)?.[1], icon = html.match(/alt="[^"]*icon"\s+src="(https:\/\/image[^"]+)"/)?.[1] || (typeof ld?.image === "string" ? ld.image : void 0), shots = [...new Set([...html.matchAll(/(https:\/\/image[^"\s]*?winudf\.com\/v2\/image1\/[^"\s]*?screen[^"\s]*)/g)].map((m) => decodeHtml(m[1]).replace(/\?.*$/, "")))].slice(0, 8), versions = null;
+      let name = (ld?.name || decodeHtml(html.match(/<h1[^>]*>\s*([^<]+?)\s*</)?.[1] || "") || pkg).trim(), latest = [...html.matchAll(/data-dt-version="([^"]+)"/g)].map((m) => m[1]).find((v) => !/SECONDARY/i.test(v)), esc = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), icon = html.match(/class="app-icon-img"[^>]*?\ssrc="(https:\/\/image[^"]+)"/)?.[1] || html.match(new RegExp(`alt="${esc} icon"[^>]*?\\ssrc="(https://image[^"]+)"`))?.[1] || html.match(new RegExp(`src="(https://image[^"]+)"[^>]*alt="${esc} icon"`))?.[1] || (typeof ld?.image === "string" && /icon/.test(ld.image) ? ld.image : void 0);
+      if (icon)
+        icon = decodeHtml(icon).replace(/([?&])w=\d+/, "$1w=512");
+      let ldShots = [].concat(ld?.screenshot || []).map((x) => typeof x === "string" ? x : x?.url).filter(Boolean), rawShots = ldShots.length ? ldShots : [...html.matchAll(/(https:\/\/image[^"\s]*?winudf\.com\/v2\/image1\/[^"\s]*?screen[^"\s]*)/g)].map((m) => m[1]), shots = [...new Map(rawShots.map((u) => {
+        let url = decodeHtml(u).replace(/([?&])h=\d+/, "$1h=1280");
+        return [url.replace(/\?.*$/, ""), url.includes("?") ? url : `${url}?fakeurl=1&type=.jpg`];
+      })).values()].slice(0, 8), descHtml = html.match(/<div class="description-content"[^>]*>([\s\S]*?)<\/div>/)?.[1], description = ld?.description || (descHtml ? decodeHtml(descHtml.replace(/<br\s*\/?>/g, `
+`).replace(/<[^>]+>/g, "")).trim() : void 0), versions = null;
       try {
         versions = sortVersionsDesc(Object.keys(await apkpureCodes(ctx, src.url)));
       } catch {}
       return {
         packageName: pkg,
-        name: ld?.name || decodeHtml(html.match(/<h1[^>]*>([^<]+)/)?.[1] || pkg),
-        summary: ld?.description ? String(ld.description).split(/(?<=\.)\s/)[0].slice(0, 80) : void 0,
-        description: ld?.description,
-        iconUrl: icon ? decodeHtml(icon) : void 0,
+        name,
+        summary: description ? summarize(String(description)) : void 0,
+        description,
+        iconUrl: icon,
         screenshots: shots,
         website: page,
         latest: versions?.[0] || latest,
@@ -247,6 +254,13 @@ async function resolveSource(src, ctx) {
       };
     }
   }
+}
+function summarize(text) {
+  let first = text.replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s/)[0];
+  if (first.length <= 80)
+    return first;
+  let cut = first.slice(0, 79);
+  return cut.slice(0, cut.lastIndexOf(" ") > 40 ? cut.lastIndexOf(" ") : 79).replace(/[,;:]$/, "") + "…";
 }
 function fdroidPackage(url) {
   let m = url.match(/packages\/([^/?#]+)/);
@@ -352,6 +366,7 @@ function fromPatchesList(j) {
     default: p.default !== !1,
     packages: p.compatiblePackages ? p.compatiblePackages.map((c) => ({
       packageName: c.packageName,
+      name: c.name || void 0,
       signatures: Array.isArray(c.signatures) && c.signatures.length ? c.signatures.map((x) => x.toLowerCase().replace(/[^0-9a-f]/g, "")) : void 0,
       versions: (() => {
         let v = c.targets ? c.targets.filter((t) => !t.isExperimental).map((t) => t.version).filter(Boolean) : c.versions || [];
@@ -742,7 +757,7 @@ async function indexSource(src) {
 }
 async function indexLsposed() {
   let mods = null;
-  for (let url of ["https://modules.lsposed.org/modules.json", "https://modules.lsposed.org/modules.json?"])
+  for (let url of ["https://modules.lsposed.org/modules.json", "https://backup.modules.lsposed.org/modules.json"])
     try {
       let r = await fetch(url);
       if (r.ok) {
@@ -2714,7 +2729,7 @@ async function buildSite() {
     mkdirSync5(`${dir}/shots`, { recursive: !0 });
     let icon = await assetTo(app.customize?.icon?.path || app.iconUrl, `${dir}/icon.png`) ? "icon.png" : "../../assets/icon.png", shots = [], i = 1;
     for (let s of app.listing?.screenshots || []) {
-      let ext = /\.(jpe?g)$/i.test(s) ? "jpg" : /\.webp$/i.test(s) ? "webp" : "png";
+      let bare = s.replace(/[?#].*$/, ""), ext = /\.(jpe?g)$/i.test(bare) ? "jpg" : /\.webp$/i.test(bare) ? "webp" : "png";
       if (await assetTo(s, `${dir}/shots/${i}.${ext}`))
         shots.push(`shots/${i}.${ext}`);
       i++;
@@ -2786,7 +2801,7 @@ function fdroidCard(fdroidAdd, depth) {
   <div>
     <h2>F-Droid repository</h2>
     <p>Add this repository in F-Droid to install and receive updates automatically.</p>
-    <div class="copy-row"><code>${esc(fdroidAdd.split("?")[0])}</code><button class="icon-btn" data-copy="${esc(fdroidAdd)}" aria-label="Copy">${ICON.copy}</button></div>
+    <div class="copy-row"><code title="${esc(fdroidAdd)}">${esc(fdroidAdd)}</code><button class="icon-btn" data-copy="${esc(fdroidAdd)}" aria-label="Copy">${ICON.copy}</button></div>
     <a class="btn filled" href="fdroidrepos://${esc(fdroidAdd.replace(/^https?:\/\//, ""))}">${ICON.download} Open in F-Droid</a>
   </div>
   <img class="qr" src="${base}qr.svg" alt="QR code for the F-Droid repository" width="132" height="132">

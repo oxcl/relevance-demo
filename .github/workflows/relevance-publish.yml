@@ -1,4 +1,4 @@
-# Managed by Relevance (engine 1.3.0). Changes may be overwritten.
+# Managed by Relevance (engine 1.3.1). Changes may be overwritten.
 name: Relevance publish
 run-name: Publish F-Droid repository and store site
 
@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 40
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+      url: ${{ steps.deploy.outputs.page_url || steps.deploy2.outputs.page_url || steps.deploy3.outputs.page_url }}
     env:
       GITHUB_TOKEN: ${{ github.token }}
       RELEVANCE_KEYSTORE: ${{ secrets.RELEVANCE_KEYSTORE }}
@@ -54,6 +54,24 @@ jobs:
         with:
           path: _site
           retention-days: 90
+      # GitHub sometimes doesn't list a freshly uploaded artifact yet ("No artifacts named
+      # github-pages were found"), so give it time and retry instead of failing the publish.
       - name: Deploy to GitHub Pages
         id: deploy
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+      - name: Wait for the artifact to become visible
+        if: steps.deploy.outcome == 'failure'
+        run: sleep 30
+      - name: Deploy to GitHub Pages (second try)
+        id: deploy2
+        if: steps.deploy.outcome == 'failure'
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+      - name: Wait a little longer
+        if: steps.deploy2.outcome == 'failure'
+        run: sleep 90
+      - name: Deploy to GitHub Pages (last try)
+        id: deploy3
+        if: steps.deploy2.outcome == 'failure'
         uses: actions/deploy-pages@v5
