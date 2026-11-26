@@ -1,6 +1,6 @@
 {
   "appId": "infinity-for-reddit",
-  "status": "ok",
+  "status": "needs-review",
   "releases": [
     {
       "version": "8.4.0",
@@ -21,6 +21,13 @@
     }
   ],
   "history": [
+    {
+      "runId": 45781656633,
+      "status": "failure",
+      "at": "2026-11-26T08:15:48.512Z",
+      "trigger": "manual",
+      "error": "Selected patches no longer exist in ReVanced v6.2.1: Patch that was removed upstream"
+    },
     {
       "runId": 45780823395,
       "version": "8.4.0",
@@ -50,7 +57,14 @@
   },
   "configHash": "0c417f71a3b4a217",
   "patchVersion": "v6.2.1",
-  "attention": null,
+  "attention": {
+    "kind": "selection-changed",
+    "message": "Selected patches no longer exist in ReVanced v6.2.1: Patch that was removed upstream",
+    "at": "2026-11-26T08:15:48.512Z",
+    "details": [
+      "Selected patches no longer exist in ReVanced v6.2.1: Patch that was removed upstream"
+    ]
+  },
   "checkedAt": "2026-11-26T08:12:10.076Z",
   "latestAvailable": "8.4.0"
 }
