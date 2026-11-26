@@ -1,14 +1,29 @@
 {
   "appId": "scanner-clone",
-  "status": "building",
-  "releases": [],
+  "status": "ok",
+  "releases": [
+    {
+      "version": "1.76.1",
+      "versionCode": 184,
+      "tag": "scanner-clone-1.76.1-f46a03",
+      "date": "2026-11-26T08:35:51.996Z",
+      "size": 7723824,
+      "sha256": "c552f2957840cd47512a7299e0a62cbc8ad4f75a2930ec20fe2f5c75fb81c0d0",
+      "apk": "de.markusfisch.android.binaryeye.binaryeyemod.scannerclone_184_f46a03.apk",
+      "url": "https://github.com/oxcl/relevance-demo/releases/download/scanner-clone-1.76.1-f46a03/de.markusfisch.android.binaryeye.binaryeyemod.scannerclone_184_f46a03.apk",
+      "patches": [],
+      "tool": "none",
+      "sourceVersion": "1.76.1"
+    }
+  ],
   "history": [
     {
       "runId": 45784462718,
       "version": "1.76.1",
-      "status": "running",
+      "status": "success",
       "at": "2026-11-26T08:35:39.782Z",
-      "trigger": "manual"
+      "trigger": "manual",
+      "durationMs": 12421
     },
     {
       "runId": 45784061575,
@@ -20,13 +35,19 @@
     }
   ],
   "targetVersion": "1.76.1",
-  "attention": {
-    "kind": "build-failed",
-    "message": "Building version 1.76.1 failed during \"customize\". The last good build stays published.",
-    "at": "2026-11-26T08:33:00.506Z",
+  "attention": null,
+  "current": {
     "version": "1.76.1",
-    "details": [
-      "java exited with code 1"
-    ]
-  }
+    "versionCode": 184,
+    "tag": "scanner-clone-1.76.1-f46a03",
+    "date": "2026-11-26T08:35:51.996Z",
+    "size": 7723824,
+    "sha256": "c552f2957840cd47512a7299e0a62cbc8ad4f75a2930ec20fe2f5c75fb81c0d0",
+    "apk": "de.markusfisch.android.binaryeye.binaryeyemod.scannerclone_184_f46a03.apk",
+    "url": "https://github.com/oxcl/relevance-demo/releases/download/scanner-clone-1.76.1-f46a03/de.markusfisch.android.binaryeye.binaryeyemod.scannerclone_184_f46a03.apk",
+    "patches": [],
+    "tool": "none",
+    "sourceVersion": "1.76.1"
+  },
+  "configHash": "f46a03e0b67a8f3b"
 }
