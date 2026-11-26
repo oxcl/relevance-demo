@@ -1,4 +1,4 @@
-# Managed by Relevance (engine 1.0.5). Changes may be overwritten.
+# Managed by Relevance (engine 1.0.6). Changes may be overwritten.
 name: Relevance build
 run-name: "Build ${{ inputs.app }} · ${{ inputs.trigger }}"
 
@@ -40,7 +40,6 @@ jobs:
       GITHUB_TOKEN: ${{ github.token }}
       RELEVANCE_KEYSTORE: ${{ secrets.RELEVANCE_KEYSTORE }}
       RELEVANCE_KEYSTORE_PASSWORD: ${{ secrets.RELEVANCE_KEYSTORE_PASSWORD }}
-      RELEVANCE_KEY_ALIAS: ${{ secrets.RELEVANCE_KEY_ALIAS }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7

@@ -1,5 +1,5 @@
 // shared/types.ts
-var ENGINE_VERSION = "1.0.5";
+var ENGINE_VERSION = "1.0.6";
 
 // engine/build.ts
 import { copyFileSync, existsSync as existsSync3, mkdirSync as mkdirSync2, readdirSync, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
@@ -1003,7 +1003,18 @@ async function customize(appId) {
     return log("No basic modifications — skipping");
   let apktool = await fetchCli("apktool"), dec = `${WORK}/decoded`;
   rmSync(dec, { recursive: !0, force: !0 }), info("Decompiling resources (code stays untouched)"), await run("java", ["-jar", apktool, "d", "-f", "-s", "-o", dec, `${WORK}/current.apk`]);
-  let meta = readJson(`${WORK}/input.json`, { packageName: app.packageName }), manifestPath = join(dec, "AndroidManifest.xml"), xml = readFileSync3(manifestPath, "utf8"), curPkg = xml.match(/<manifest\b[^>]*package="([^"]+)"/)?.[1] || meta.packageName;
+  let meta = readJson(`${WORK}/input.json`, { packageName: app.packageName }), manifestPath = join(dec, "AndroidManifest.xml"), xml = readFileSync3(manifestPath, "utf8"), curPkg = xml.match(/<manifest\b[^>]*package="([^"]+)"/)?.[1] || meta.packageName, resDir = join(dec, "res");
+  for (let d of existsSync3(resDir) ? readdirSync(resDir) : []) {
+    let dir = join(resDir, d);
+    for (let f of readdirSync(dir))
+      if (f.startsWith("relevance_icon"))
+        rmSync(join(dir, f));
+      else if (d.startsWith("values") && f.endsWith(".xml") && f !== "public.xml") {
+        let t = readFileSync3(join(dir, f), "utf8"), n = t.replace(/^\s*<(color|drawable|mipmap)\s+name="relevance_icon[^"]*"[^>]*(?:\/>|>[^<]*<\/\1>)\s*$/gm, "");
+        if (n !== t)
+          writeFileSync2(join(dir, f), n);
+      }
+  }
   if (c.icon) {
     let iconFile = c.icon.path;
     if (!existsSync3(iconFile))
@@ -1037,7 +1048,7 @@ async function customize(appId) {
   info("Rebuilding APK"), await run("java", ["-jar", apktool, "b", "-o", `${WORK}/customized.apk`, dec]), copyFileSync(`${WORK}/customized.apk`, `${WORK}/current.apk`), ok("Customized APK ready");
 }
 async function sign(appId) {
-  let bt = buildTools(), ks = `${WORK}/keystore.p12`;
+  let bt = buildTools(), alias = loadConfig().settings.signing?.alias || env.RELEVANCE_KEY_ALIAS || "relevance", ks = `${WORK}/keystore.p12`;
   if (!env.RELEVANCE_KEYSTORE)
     throw Error("Signing key secret RELEVANCE_KEYSTORE is missing — open Relevance settings to set it up");
   writeFileSync2(ks, Buffer.from(env.RELEVANCE_KEYSTORE, "base64"));
@@ -1053,7 +1064,7 @@ async function sign(appId) {
     "--key-pass",
     "env:RELEVANCE_KEYSTORE_PASSWORD",
     "--ks-key-alias",
-    env.RELEVANCE_KEY_ALIAS || "relevance",
+    alias,
     "--v1-signing-enabled",
     "true",
     "--v2-signing-enabled",
@@ -2472,7 +2483,7 @@ async function buildSite() {
       "keystore: keystore.p12",
       `keystorepass: ${JSON.stringify(env.RELEVANCE_KEYSTORE_PASSWORD || "")}`,
       `keypass: ${JSON.stringify(env.RELEVANCE_KEYSTORE_PASSWORD || "")}`,
-      `repo_keyalias: ${JSON.stringify(env.RELEVANCE_KEY_ALIAS || "relevance")}`,
+      `repo_keyalias: ${JSON.stringify(cfg.settings.signing?.alias || env.RELEVANCE_KEY_ALIAS || "relevance")}`,
       'keydname: "CN=Relevance"',
       "make_current_version_link: false",
       ""

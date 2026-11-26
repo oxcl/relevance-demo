@@ -1,4 +1,4 @@
-# Managed by Relevance (engine 1.0.5). Changes may be overwritten.
+# Managed by Relevance (engine 1.0.6). Changes may be overwritten.
 name: Relevance updates
 run-name: "Check for updates${{ inputs.app && format(' · {0}', inputs.app) || '' }}"
 
