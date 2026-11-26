@@ -1,5 +1,5 @@
 // shared/types.ts
-var ENGINE_VERSION = "1.2.0";
+var ENGINE_VERSION = "1.3.0";
 
 // engine/build.ts
 import { copyFileSync, existsSync as existsSync4, mkdirSync as mkdirSync3, readdirSync as readdirSync2, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
@@ -352,6 +352,7 @@ function fromPatchesList(j) {
     default: p.default !== !1,
     packages: p.compatiblePackages ? p.compatiblePackages.map((c) => ({
       packageName: c.packageName,
+      signatures: Array.isArray(c.signatures) && c.signatures.length ? c.signatures.map((x) => x.toLowerCase().replace(/[^0-9a-f]/g, "")) : void 0,
       versions: (() => {
         let v = c.targets ? c.targets.filter((t) => !t.isExperimental).map((t) => t.version).filter(Boolean) : c.versions || [];
         return v.length ? v : null;
@@ -799,7 +800,12 @@ async function notify(cfg, app, st) {
   let n = cfg.settings?.notifications || { email: !0, issue: !0, inApp: !0, fdroid: !0 }, att = st.attention;
   if (!att)
     return;
-  let runUrl = `https://github.com/${REPO}/actions/runs/${RUN_ID}`, appUrl = `${cfg.settings.relevanceUrl}/apps/${app.id}`, title = `${app.customize?.name || app.name}: ${att.kind === "build-failed" ? "update build failed" : "your patch selection needs a review"}`, body = [
+  let runUrl = `https://github.com/${REPO}/actions/runs/${RUN_ID}`, appUrl = `${cfg.settings.relevanceUrl}/apps/${app.id}`, what = {
+    "build-failed": "update build failed",
+    "selection-changed": "your patch selection needs a review",
+    "no-compatible-version": "no compatible version available",
+    "signature-changed": "the original app's signature doesn't match"
+  }, title = `${app.customize?.name || app.name}: ${what[att.kind] || "needs attention"}`, body = [
     att.message,
     "",
     ...(att.details || []).map((d) => `> ${d}`),
@@ -924,6 +930,45 @@ async function sourceDownload(app, version) {
     throw Object.assign(Error(`F-Droid doesn't offer version ${version}, which your patches need`), { attention: "no-compatible-version" });
   return dl;
 }
+function expectedSignatures(index, pkg) {
+  let sigs = /* @__PURE__ */ new Set;
+  for (let p of index?.patches || [])
+    for (let c of p.packages || [])
+      if (c.packageName === pkg)
+        for (let s of c.signatures || [])
+          sigs.add(s);
+  return sigs.size ? [...sigs] : void 0;
+}
+async function apkCerts(file) {
+  let out;
+  try {
+    out = await run(join2(buildTools(), "apksigner"), ["verify", "--print-certs", file], { quiet: !0 });
+  } catch {
+    throw Error(`${file.split("/").pop()} has a missing or invalid signature — the download may be corrupt or modified`);
+  }
+  let certs = [...new Set([...out.matchAll(/certificate SHA-256 digest: ([0-9a-f]{64})/gi)].map((m) => m[1].toLowerCase()))];
+  if (!certs.length)
+    throw Error(`Couldn't read the signing certificate of ${file.split("/").pop()}`);
+  return certs;
+}
+var short = (c) => c.slice(0, 16).replace(/(.{4})/g, "$1 ").trim() + "…";
+async function checkOriginal(app, p, certs) {
+  let st = loadState(app.id);
+  info(`Original signature: ${certs.map(short).join(", ")}`);
+  let overlap = (a, b) => a.some((x) => b.includes(x));
+  if (p.expectedSignatures?.length) {
+    if (!overlap(certs, p.expectedSignatures))
+      throw Object.assign(Error(`The downloaded ${app.name} is not signed by its developer: its certificate (${short(certs[0])}) doesn't match the one ${p.expectedFrom} publishes for this app. The file may have been modified by the source.`), { attention: "signature-changed" });
+    ok(`Signature matches the one published by ${p.expectedFrom}`);
+  }
+  let pinned = st.sourceCert?.sha256;
+  if (pinned?.length) {
+    if (!overlap(certs, pinned))
+      throw Object.assign(Error(`${app.name} ${p.version ?? ""} is signed by a different key (${short(certs[0])}) than the one pinned on ${st.sourceCert.firstSeen.slice(0, 10)} (${short(pinned[0])}). The download may have been tampered with. If the developer really changed keys, choose "Trust new signature" in Relevance.`.replace("  ", " ")), { attention: "signature-changed" });
+    ok("Signature matches the pinned original");
+  } else
+    await updateState(app.id, (s) => s.sourceCert = { sha256: certs, firstSeen: (/* @__PURE__ */ new Date()).toISOString(), version: p.version || void 0 }, `relevance: pin original signature of ${app.name}`), ok("Pinned the original signature — future downloads must match it");
+}
 var planPath = () => `${WORK}/plan.json`, loadPlan = () => readJson(planPath(), null);
 function getApp(cfg, id) {
   let app = cfg.apps.find((a) => a.id === id);
@@ -983,6 +1028,8 @@ async function plan(appId, opts) {
     download: { url: dl.url, fileName: dl.fileName, version: dl.version },
     configHash: hash,
     patchVersion: index?.version,
+    expectedSignatures: expectedSignatures(index, app.packageName),
+    expectedFrom: index ? `${index.name} ${index.version}` : void 0,
     skip: Boolean(same && !opts.force),
     rebuild: needsRebuild(app),
     trigger: opts.trigger,
@@ -1033,13 +1080,26 @@ async function fetchApk(appId) {
       headers.Authorization = `Bearer ${env.GITHUB_TOKEN}`;
     await download(p.download.url, raw, headers);
   }
-  let names = zipEntries(raw), looksApk = names.includes("AndroidManifest.xml"), isBundle = !looksApk && names.some((n) => /\.apk$/i.test(n)), input = `${WORK}/input.apk`;
+  let names = zipEntries(raw), looksApk = names.includes("AndroidManifest.xml"), isBundle = !looksApk && names.some((n) => /\.apk$/i.test(n)), input = `${WORK}/input.apk`, certs;
   if (looksApk)
-    renameSync(raw, input);
+    renameSync(raw, input), certs = await apkCerts(input);
   else if (isBundle) {
-    info("Split APK bundle detected — merging into a single APK with APKEditor");
-    let ed = await fetchCli("apkeditor"), bundle = `${WORK}/bundle.xapk`;
-    renameSync(raw, bundle), await run("java", ["-jar", ed, "m", "-i", bundle, "-o", input, "-f"]);
+    let bundle = `${WORK}/bundle.xapk`;
+    renameSync(raw, bundle);
+    let splits = `${WORK}/splits`;
+    rmSync(splits, { recursive: !0, force: !0 }), mkdirSync3(splits, { recursive: !0 }), await run("python3", ["-c", `import zipfile,sys
+z=zipfile.ZipFile(sys.argv[1])
+for n in z.namelist():
+  if n.endswith(".apk"): z.extract(n, sys.argv[2])`, bundle, splits], { quiet: !0 });
+    let files = readdirSync2(splits, { recursive: !0 }).map(String).filter((f) => f.endsWith(".apk"));
+    if (!files.length)
+      throw Error("The bundle contains no APKs");
+    let sets = await Promise.all(files.map((f) => apkCerts(join2(splits, f))));
+    if (certs = sets[0], sets.some((c) => !c.some((x) => certs.includes(x))))
+      throw Error("The split APKs in this bundle are signed by different keys — refusing to use it");
+    ok(`All ${files.length} split APKs carry valid signatures from the same key`), info("Split APK bundle detected — merging into a single APK with APKEditor");
+    let ed = await fetchCli("apkeditor");
+    await run("java", ["-jar", ed, "m", "-i", bundle, "-o", input, "-f"]);
   } else
     throw Error("The downloaded file is not an APK");
   let meta = await apkInfo(input);
@@ -1051,7 +1111,7 @@ async function fetchApk(appId) {
   }
   if (meta.packageName !== app.packageName)
     warn(`Package name ${meta.packageName} differs from the configured ${app.packageName}`);
-  if (writeJson(`${WORK}/input.json`, meta), copyFileSync(input, `${WORK}/current.apk`), isBundle && !p.rebuild)
+  if (await checkOriginal(app, p, certs), writeJson(`${WORK}/input.json`, meta), copyFileSync(input, `${WORK}/current.apk`), isBundle && !p.rebuild)
     info("A merged bundle has no valid signature — signing it with your key"), await sign(appId);
 }
 function optionArg(v) {
@@ -2597,7 +2657,7 @@ async function buildSite() {
       } catch (e) {
         warn(`Skipping ${r.apk}: ${e.message}`);
       }
-    let desc = (cfg.settings.notifications?.fdroid && st.attention ? `<p><b>⚠ ${esc(st.attention.kind === "build-failed" ? "An update is available but the build is failing — check it out in Relevance." : "An update changed what you picked — review it in Relevance.")}</b></p>` : "") + htmlToFdroid(app.listing?.description || `<p>${esc(app.listing?.summary || app.name)}</p>`), patches = st.current?.patches?.length ? `<p><b>Patches applied</b></p><ul>${st.current.patches.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>` : "", yml = [
+    let desc = (cfg.settings.notifications?.fdroid && st.attention ? `<p><b>⚠ ${esc(st.attention.kind === "build-failed" ? "An update is available but the build is failing — check it out in Relevance." : st.attention.kind === "signature-changed" ? "An update was held back: the downloaded app isn't signed by its usual developer key." : "An update changed what you picked — review it in Relevance.")}</b></p>` : "") + htmlToFdroid(app.listing?.description || `<p>${esc(app.listing?.summary || app.name)}</p>`), patches = st.current?.patches?.length ? `<p><b>Patches applied</b></p><ul>${st.current.patches.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>` : "", yml = [
       "Categories:",
       `  - ${JSON.stringify(app.listing?.category || "System")}`,
       "License: Unknown",
@@ -2755,7 +2815,7 @@ ${fdroidCard(o.fdroidAdd, 0)}
   return shell(cfg, cfg.settings.store?.title || "My apps", body, 0);
 }
 function appPage(cfg, app, st, o) {
-  let cur = st.current, versions = st.releases.map((r) => `<tr><td class="mono">${esc(r.version)}</td><td class="mono">${esc(r.date.slice(0, 10))}</td><td class="mono">${formatBytes(r.size)}</td><td><a class="icon-btn" href="${esc(r.url)}" aria-label="Download ${esc(r.version)}">${ICON.download}</a></td></tr>`).join(""), warning = cfg.settings.notifications?.fdroid && st.attention ? `<div class="notice">${ICON.warn}<span>${esc(st.attention.kind === "build-failed" ? "An update is available but the build is currently failing. The version below is the last good build." : "An update changed the patch selection; the owner is reviewing it.")}</span></div>` : "", body = `<main class="wrap">
+  let cur = st.current, versions = st.releases.map((r) => `<tr><td class="mono">${esc(r.version)}</td><td class="mono">${esc(r.date.slice(0, 10))}</td><td class="mono">${formatBytes(r.size)}</td><td><a class="icon-btn" href="${esc(r.url)}" aria-label="Download ${esc(r.version)}">${ICON.download}</a></td></tr>`).join(""), warning = cfg.settings.notifications?.fdroid && st.attention ? `<div class="notice">${ICON.warn}<span>${esc(st.attention.kind === "build-failed" ? "An update is available but the build is currently failing. The version below is the last good build." : st.attention.kind === "signature-changed" ? "An update was held back because the downloaded app isn't signed by its usual developer key. The version below is the last good build." : "An update changed the patch selection; the owner is reviewing it.")}</span></div>` : "", body = `<main class="wrap">
 <section class="app-hero">
   <img class="tile big" src="${o.icon}" alt="" width="128" height="128">
   <div class="meta">
