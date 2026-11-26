@@ -302,5 +302,13 @@
   "configHash": "666c8a4dc11fb616",
   "patchVersion": "2.4.0",
   "checkedAt": "2026-11-26T09:19:46.984Z",
-  "latestAvailable": "2026.46.0"
+  "latestAvailable": "2026.46.0",
+  "sourceCert": {
+    "sha256": [
+      "970b91143813b4c9d5f3634f672c9fcaa5621b4efaaedafd6c235cbbb869736f",
+      "3257d599a49d2c961a471ca9843f59d341a405884583fc087df4237b733bbd6d"
+    ],
+    "firstSeen": "2026-11-26T09:25:04.951Z",
+    "version": "2026.40.0"
+  }
 }
