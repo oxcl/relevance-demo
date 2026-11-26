@@ -1,6 +1,6 @@
 {
   "appId": "infinity-for-reddit",
-  "status": "needs-review",
+  "status": "building",
   "releases": [
     {
       "version": "8.4.0",
@@ -21,6 +21,13 @@
     }
   ],
   "history": [
+    {
+      "runId": 45782119871,
+      "version": "8.4.0",
+      "status": "running",
+      "at": "2026-11-26T08:19:06.004Z",
+      "trigger": "manual"
+    },
     {
       "runId": 45781656633,
       "status": "failure",
