@@ -1,5 +1,5 @@
 // shared/types.ts
-var ENGINE_VERSION = "1.0.3";
+var ENGINE_VERSION = "1.0.4";
 
 // engine/build.ts
 import { copyFileSync, existsSync as existsSync3, mkdirSync as mkdirSync2, readdirSync, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
@@ -413,12 +413,19 @@ function run(cmd, args, opts = {}) {
         if (out += l + `
 `, out.length > 2000000)
           out = out.slice(-1e6);
-        log(l);
+        if (!opts.quiet)
+          log(l);
       }
     };
     p.stdout.on("data", onData), p.stderr.on("data", onData), p.on("error", reject), p.on("close", (code) => {
-      if (partial)
-        out += partial, log(partial);
+      if (partial) {
+        if (out += partial, !opts.quiet)
+          log(partial);
+      }
+      if (code !== 0 && opts.quiet)
+        for (let l of out.split(`
+`).slice(-30))
+          log(l);
       code === 0 ? resolve(out) : reject(Error(`${cmd} exited with code ${code}`));
     });
   });
