@@ -1,15 +1,25 @@
 {
   "appId": "scanner-clone",
-  "status": "building",
+  "status": "failed",
   "releases": [],
   "history": [
     {
       "runId": 45784061575,
       "version": "1.76.1",
-      "status": "running",
+      "status": "failure",
       "at": "2026-11-26T08:32:50.000Z",
-      "trigger": "manual"
+      "trigger": "manual",
+      "error": "java exited with code 1"
     }
   ],
-  "targetVersion": "1.76.1"
+  "targetVersion": "1.76.1",
+  "attention": {
+    "kind": "build-failed",
+    "message": "Building version 1.76.1 failed during \"customize\". The last good build stays published.",
+    "at": "2026-11-26T08:33:00.506Z",
+    "version": "1.76.1",
+    "details": [
+      "java exited with code 1"
+    ]
+  }
 }
