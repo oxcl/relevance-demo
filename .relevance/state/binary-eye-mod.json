@@ -1,6 +1,6 @@
 {
   "appId": "binary-eye-mod",
-  "status": "ok",
+  "status": "building",
   "releases": [
     {
       "version": "1.76.1",
@@ -17,6 +17,13 @@
     }
   ],
   "history": [
+    {
+      "runId": 45791679349,
+      "version": "1.76.1",
+      "status": "running",
+      "at": "2026-11-26T09:24:38.912Z",
+      "trigger": "manual"
+    },
     {
       "runId": 45781367943,
       "version": "1.76.1",
