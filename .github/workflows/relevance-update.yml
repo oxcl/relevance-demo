@@ -1,4 +1,4 @@
-# Managed by Relevance (engine 1.0.4). Changes may be overwritten.
+# Managed by Relevance (engine 1.0.5). Changes may be overwritten.
 name: Relevance updates
 run-name: "Check for updates${{ inputs.app && format(' · {0}', inputs.app) || '' }}"
 
@@ -31,14 +31,14 @@ jobs:
       GITHUB_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
       - name: Check for updates [check]
