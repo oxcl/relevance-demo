@@ -1,5 +1,5 @@
 // shared/types.ts
-var ENGINE_VERSION = "1.0.9";
+var ENGINE_VERSION = "1.1.0";
 
 // engine/build.ts
 import { copyFileSync, existsSync as existsSync3, mkdirSync as mkdirSync2, readdirSync, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
@@ -210,9 +210,9 @@ async function resolveSource(src, ctx) {
     }
     case "apkpure": {
       let { pkg, page } = apkpurePage(src.url), res = await ctx.fetch(page, { headers: ua(ctx), redirect: "follow" });
-      if (!res.ok)
+      if (!res.ok && !(res.status === 403 && ctx.resolver))
         throw Error(`APKPure responded ${res.status}`);
-      let html = await res.text(), ld = null;
+      let html = res.ok ? await res.text() : "", ld = null;
       for (let m of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g))
         try {
           let j = JSON.parse(m[1]);
@@ -220,7 +220,7 @@ async function resolveSource(src, ctx) {
         } catch {}
       let latest = html.match(/data-dt-version="([^"]+)"/)?.[1], icon = html.match(/alt="[^"]*icon"\s+src="(https:\/\/image[^"]+)"/)?.[1] || (typeof ld?.image === "string" ? ld.image : void 0), shots = [...new Set([...html.matchAll(/(https:\/\/image[^"\s]*?winudf\.com\/v2\/image1\/[^"\s]*?screen[^"\s]*)/g)].map((m) => decodeHtml(m[1]).replace(/\?.*$/, "")))].slice(0, 8), versions = null;
       try {
-        versions = await apkpureVersions(ctx, page);
+        versions = sortVersionsDesc(Object.keys(await apkpureCodes(ctx, src.url)));
       } catch {}
       return {
         packageName: pkg,
@@ -230,7 +230,7 @@ async function resolveSource(src, ctx) {
         iconUrl: icon ? decodeHtml(icon) : void 0,
         screenshots: shots,
         website: page,
-        latest,
+        latest: versions?.[0] || latest,
         versions: versions && versions.length ? versions : latest ? [latest] : null,
         autoUpdates: !0
       };
@@ -259,22 +259,53 @@ function apkpurePage(url) {
   let idx = parts.indexOf(pkg), slug = parts[idx - 1] || "app";
   return { pkg, page: `https://apkpure.net/${slug}/${pkg}` };
 }
-async function apkpureVersions(ctx, page) {
-  let r = await ctx.fetch(`${page}/versions`, { headers: ua(ctx), redirect: "follow" });
-  if (!r.ok)
-    throw Error(`versions ${r.status}`);
-  let html = await r.text(), v = [
-    ...[...html.matchAll(/\/download\/([^"/?#]+)"/g)].map((m) => decodeURIComponent(m[1])),
-    ...[...html.matchAll(/data-dt-version="([^"]+)"/g)].map((m) => m[1])
-  ].filter((x) => !/SECONDARY/i.test(x) && /\d/.test(x));
-  return sortVersionsDesc(v);
+function parseApkpureCodes(html, pkg) {
+  let out = {}, esc = pkg.replace(/\./g, "\\."), re = new RegExp(`<a\\b[^>]*href="[^"]*/${esc}/download/([^"/?#]+)"[^>]*data-dt-version-code="(\\d+)"`, "g");
+  for (let m of html.matchAll(re))
+    out[decodeURIComponent(m[1])] = Number(m[2]);
+  for (let tag of html.match(/<[^>]*data-dt-versioncode="\d+"[^>]*>/g) || []) {
+    let v = tag.match(/data-dt-version="([^"]+)"/)?.[1], c = tag.match(/data-dt-versioncode="(\d+)"/)?.[1], p = tag.match(/data-dt-package(?:-?name)?="([^"]+)"/)?.[1];
+    if (v && c && !/SECONDARY/i.test(v) && (!p || p === pkg))
+      out[v] ??= Number(c);
+  }
+  return out;
 }
-async function apkpureVersionUrl(ctx, page, version) {
-  let r = await ctx.fetch(`${page}/download/${encodeURIComponent(version)}`, { headers: ua(ctx), redirect: "follow" });
+async function apkpureCodes(ctx, url, version) {
+  let { pkg, page } = apkpurePage(url), blocked = !1, get = async (u) => {
+    for (let i = 0;; i++) {
+      let r = await ctx.fetch(u, { headers: ua(ctx), redirect: "follow" });
+      if (r.status !== 429 || i >= 2)
+        return r;
+      await new Promise((res) => setTimeout(res, 2000 * (i + 1)));
+    }
+  }, direct = async () => {
+    let r = await get(`${page}/versions`);
+    if (!r.ok)
+      throw blocked = !0, Error(`APKPure versions page responded ${r.status}`);
+    let codes = parseApkpureCodes(await r.text(), pkg);
+    if (version && !codes[version]) {
+      let d = await get(`${page}/download/${encodeURIComponent(version)}`);
+      if (d.ok) {
+        let html = await d.text(), code = html.match(/d\.apkpure\.(?:net|com)\/b\/(?:APK|XAPK)\/[^"'\s]+?versionCode=(\d+)/)?.[1], shown = html.match(/data-dt-version="([^"]+)"/)?.[1];
+        if (code && (!shown || shown === version))
+          codes[version] = Number(code);
+      } else if (d.status !== 404)
+        blocked = !0;
+    }
+    return codes;
+  };
+  try {
+    let codes = await direct();
+    if (!version || codes[version] || !blocked || !ctx.resolver)
+      return codes;
+  } catch (e) {
+    if (!blocked || !ctx.resolver)
+      throw e;
+  }
+  let q = new URLSearchParams({ url: page, ...version ? { version } : {} }), r = await ctx.fetch(`${ctx.resolver.replace(/\/$/, "")}/api/apkpure/codes?${q}`), j = await r.json().catch(() => ({}));
   if (!r.ok)
-    return null;
-  let m = (await r.text()).match(/https:\/\/d\.apkpure\.(?:net|com)\/b\/(?:APK|XAPK)\/[^"'\s]+versionCode=\d+/);
-  return m ? decodeHtml(m[0]) : null;
+    throw Error(`Couldn't read APKPure versions (${j.error || r.status})`);
+  return j.codes || {};
 }
 async function getDownload(src, version, ctx) {
   switch (src.type) {
@@ -299,13 +330,10 @@ async function getDownload(src, version, ctx) {
       };
     }
     case "apkpure": {
-      let { pkg, page } = apkpurePage(src.url);
-      if (version) {
-        let url = await apkpureVersionUrl(ctx, page, version).catch(() => null);
-        if (url)
-          return { url, version, fileName: `${pkg}.apk` };
-      }
-      return { url: `https://d.apkpure.net/b/APK/${pkg}?version=latest`, version: void 0, fileName: `${pkg}.apk` };
+      let { pkg } = apkpurePage(src.url), codes = await apkpureCodes(ctx, src.url, version), want = version || sortVersionsDesc(Object.keys(codes))[0];
+      if (!want || !codes[want])
+        throw Error(`APKPure has no download for ${pkg} ${version ?? "(no versions listed)"}`);
+      return { url: `https://d.apkpure.net/b/APK/${pkg}?versionCode=${codes[want]}`, version: want, versionCode: codes[want], fileName: `${pkg}.apk` };
     }
     case "url":
     case "upload":
@@ -823,6 +851,13 @@ async function resolveIssues(app) {
 }
 
 // engine/build.ts
+function srcCtx() {
+  let resolver = env.RELEVANCE_URL;
+  try {
+    resolver ||= loadConfig().settings.relevanceUrl;
+  } catch {}
+  return { fetch: (i, o) => fetch(i, o), githubToken: env.GITHUB_TOKEN, resolver };
+}
 var planPath = () => `${WORK}/plan.json`, loadPlan = () => readJson(planPath(), null);
 function getApp(cfg, id) {
   let app = cfg.apps.find((a) => a.id === id);
@@ -857,7 +892,7 @@ async function plan(appId, opts) {
       warn(`No patch index for ${ps.name}; version selection falls back to the latest`);
   let available = null;
   try {
-    let si = await resolveSource(app.source, { fetch, githubToken: env.GITHUB_TOKEN });
+    let si = await resolveSource(app.source, srcCtx());
     available = si.versions, ok(`Source offers ${available ? available.length + " versions, latest " + (si.latest || available[0]) : "the latest version only"}`);
   } catch (e) {
     warn(`Could not list source versions: ${shortErr(e)}`);
@@ -873,9 +908,9 @@ async function plan(appId, opts) {
   if (t.conflict)
     throw Object.assign(Error(t.reason), { attention: "no-compatible-version" });
   log(`Target version: ${t.target ?? "latest"} — ${t.reason}`);
-  let dl = await getDownload(app.source, t.target, { fetch, githubToken: env.GITHUB_TOKEN });
-  if (t.target && dl.version !== t.target && !app.pin)
-    warn(`Couldn't find a download for ${t.target} at the source; using what it offers (${dl.version || "latest"})`);
+  let dl = await getDownload(app.source, t.target, srcCtx());
+  if (t.target && dl.version !== t.target && (app.source.type === "apkpure" || app.source.type === "fdroid"))
+    throw Object.assign(Error(`${app.source.type === "apkpure" ? "APKPure" : "F-Droid"} doesn't offer version ${t.target}, which your patches need`), { attention: "no-compatible-version" });
   let version = dl.version || t.target, same = state.current && version && (state.current.sourceVersion ?? state.current.version) === version && state.configHash === hash && (!index || state.patchVersion === index.version), p = {
     appId,
     version: version || null,
@@ -937,8 +972,12 @@ async function fetchApk(appId) {
   } else
     throw Error("The downloaded file is not an APK");
   let meta = await apkInfo(input);
-  if (ok(`${meta.packageName} ${meta.versionName} (${meta.versionCode}), ${(statSync(input).size / 1048576).toFixed(1)} MB`), p.version && meta.versionName !== p.version && app.source.type !== "upload")
-    warn(`The source delivered ${meta.versionName} instead of the target ${p.version}; patches may not fully support it`);
+  if (ok(`${meta.packageName} ${meta.versionName} (${meta.versionCode}), ${(statSync(input).size / 1048576).toFixed(1)} MB`), p.version && meta.versionName !== p.version) {
+    if (app.source.type === "apkpure" || app.source.type === "fdroid")
+      throw Error(`The source delivered version ${meta.versionName}, but ${p.version} was requested`);
+    if (app.source.type !== "upload")
+      log(`Note: release ${p.version} contains app version ${meta.versionName}`);
+  }
   if (meta.packageName !== app.packageName)
     warn(`Package name ${meta.packageName} differs from the configured ${app.packageName}`);
   if (writeJson(`${WORK}/input.json`, meta), copyFileSync(input, `${WORK}/current.apk`), isBundle && !p.rebuild)
@@ -1276,12 +1315,12 @@ async function checkUpdates(only) {
       }
       let available = null, latest, auto = sourceAutoUpdates(app.source.type);
       if (auto) {
-        let si = await resolveSource(app.source, { fetch, githubToken: env.GITHUB_TOKEN });
+        let si = await resolveSource(app.source, srcCtx());
         available = si.versions, latest = si.latest || si.versions?.[0];
       }
       let t = pickTarget(app.tool === "revanced" || app.tool === "morphe" ? index : null, app.packageName, app.patches, available, app.pin), target = t.target;
       if (!target && auto)
-        target = (await getDownload(app.source, null, { fetch, githubToken: env.GITHUB_TOKEN })).version || null;
+        target = (await getDownload(app.source, null, srcCtx())).version || null;
       let changed = !st.current || st.configHash !== hash || index && st.patchVersion !== index.version || auto && target && target !== (st.current.sourceVersion ?? st.current.version);
       if (await updateState(app.id, (s) => {
         s.checkedAt = (/* @__PURE__ */ new Date()).toISOString(), s.latestAvailable = latest, s.targetVersion = target || void 0;
