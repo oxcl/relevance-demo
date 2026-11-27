@@ -1,5 +1,5 @@
 // shared/types.ts
-var ENGINE_VERSION = "1.3.1";
+var ENGINE_VERSION = "1.3.2";
 
 // engine/build.ts
 import { copyFileSync, existsSync as existsSync4, mkdirSync as mkdirSync3, readdirSync as readdirSync2, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
@@ -485,7 +485,7 @@ function run(cmd, args, opts = {}) {
         for (let l of out.split(`
 `).slice(-30))
           log(l);
-      code === 0 ? resolve(out) : reject(Error(`${cmd} exited with code ${code}`));
+      code === 0 ? resolve(out) : reject(Object.assign(Error(`${cmd} exited with code ${code}`), { output: out }));
     });
   });
 }
@@ -1223,6 +1223,18 @@ function rewriteManifest(xml, opts) {
   }
   return m;
 }
+function invalidQualifierDirs(resDir) {
+  if (!existsSync4(resDir))
+    return [];
+  return readdirSync2(resDir).filter((d) => d.split("-").slice(1).some((q) => /^(mcc|mnc)\d{4,}$/.test(q)));
+}
+function dropConfigs(resDir, dirs) {
+  if (!dirs.length)
+    return;
+  for (let d of dirs)
+    rmSync(join2(resDir, d), { recursive: !0, force: !0 });
+  warn(`Dropped ${dirs.length} resource folder${dirs.length === 1 ? "" : "s"} for configurations no device can have (${dirs.slice(0, 4).join(", ")}${dirs.length > 4 ? ", …" : ""})`);
+}
 async function customize(appId) {
   let cfg = loadConfig(), app = getApp(cfg, appId), c = app.customize || {};
   if (!c.name && !c.packageName && !c.icon)
@@ -1271,7 +1283,16 @@ async function customize(appId) {
     ok(`Renamed the app to "${c.name}"`);
   if (c.packageName && c.packageName !== curPkg)
     ok(`Package name ${curPkg} → ${c.packageName}`);
-  info("Rebuilding APK"), await run("java", ["-jar", apktool, "b", "-o", `${WORK}/customized.apk`, dec]), copyFileSync(`${WORK}/customized.apk`, `${WORK}/current.apk`), ok("Customized APK ready");
+  info("Rebuilding APK"), dropConfigs(resDir, invalidQualifierDirs(resDir));
+  try {
+    await run("java", ["-jar", apktool, "b", "-o", `${WORK}/customized.apk`, dec]);
+  } catch (e) {
+    let bad = [...new Set([...String(e.output || "").matchAll(/res\/([^/\s]+)\/[^:\s]+: error: invalid configuration/g)].map((m) => m[1]))];
+    if (!bad.length)
+      throw e;
+    dropConfigs(resDir, bad), info("Rebuilding APK again"), await run("java", ["-jar", apktool, "b", "-o", `${WORK}/customized.apk`, dec]);
+  }
+  copyFileSync(`${WORK}/customized.apk`, `${WORK}/current.apk`), ok("Customized APK ready");
 }
 async function sign(appId) {
   let bt = buildTools(), alias = loadConfig().settings.signing?.alias || env.RELEVANCE_KEY_ALIAS || "relevance", ks = `${WORK}/keystore.p12`;
