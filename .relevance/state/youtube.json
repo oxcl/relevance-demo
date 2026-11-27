@@ -1,14 +1,15 @@
 {
   "appId": "youtube",
-  "status": "building",
+  "status": "failed",
   "releases": [],
   "history": [
     {
       "runId": 46085321991,
       "version": "21.23.492",
-      "status": "running",
+      "status": "failure",
       "at": "2026-11-27T23:58:01.679Z",
-      "trigger": "manual"
+      "trigger": "manual",
+      "error": "java exited with code 1"
     }
   ],
   "targetVersion": "21.23.492",
@@ -20,5 +21,14 @@
     ],
     "firstSeen": "2026-11-27T23:58:10.488Z",
     "version": "21.23.492"
+  },
+  "attention": {
+    "kind": "build-failed",
+    "message": "Building version 21.23.492 failed during \"customize\". The last good build stays published.",
+    "at": "2026-11-27T23:58:54.589Z",
+    "version": "21.23.492",
+    "details": [
+      "java exited with code 1"
+    ]
   }
 }
