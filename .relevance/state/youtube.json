@@ -11,5 +11,14 @@
       "trigger": "manual"
     }
   ],
-  "targetVersion": "21.23.492"
+  "targetVersion": "21.23.492",
+  "sourceCert": {
+    "sha256": [
+      "5aad2bee6db95d17e05a08d7d1e64c10a1511879154483916b6ae6c7fd9cb0c6",
+      "3d7a1223019aa39d9ea0e3436ab7c0896bfb4fb679f4de5fe7c23f326c8f994a",
+      "3257d599a49d2c961a471ca9843f59d341a405884583fc087df4237b733bbd6d"
+    ],
+    "firstSeen": "2026-11-27T23:58:10.488Z",
+    "version": "21.23.492"
+  }
 }
