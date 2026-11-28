@@ -11,5 +11,12 @@
       "trigger": "manual"
     }
   ],
-  "targetVersion": "1.76.1"
+  "targetVersion": "1.76.1",
+  "sourceCert": {
+    "sha256": [
+      "e2a511e43147c2d46c5f9c0986ce086c1fc62931ea8449392171dc8187ea409e"
+    ],
+    "firstSeen": "2026-11-28T01:07:34.917Z",
+    "version": "1.76.1"
+  }
 }
