@@ -1,11 +1,11 @@
 // shared/types.ts
-var ENGINE_VERSION = "1.3.2";
+var ENGINE_VERSION = "1.3.3";
 
 // engine/build.ts
 import { copyFileSync, existsSync as existsSync4, mkdirSync as mkdirSync3, readdirSync as readdirSync2, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
 import { createHash as createHash2 } from "node:crypto";
 import { deflateSync } from "node:zlib";
-import { join as join2 } from "node:path";
+import { join as join2, resolve } from "node:path";
 
 // shared/logic.ts
 function compareVersions(a, b) {
@@ -1161,7 +1161,21 @@ function solidPng(size, hex) {
   }, ihdr = Buffer.alloc(13);
   return ihdr.writeUInt32BE(size, 0), ihdr.writeUInt32BE(size, 4), ihdr.set([8, 2, 0, 0, 0], 8), Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]);
 }
-function brandWithPatches(app, index, selected) {
+var DENSITIES = [["mdpi", 108], ["hdpi", 162], ["xhdpi", 216], ["xxhdpi", 324], ["xxxhdpi", 432]];
+async function resizePng(src, outs) {
+  let file = `${WORK}/tools/Resize.java`;
+  mkdirSync3(`${WORK}/tools`, { recursive: !0 }), writeFileSync2(file, `import java.awt.*; import java.awt.image.*; import javax.imageio.ImageIO; import java.io.File;
+public class Resize { public static void main(String[] a) throws Exception {
+  BufferedImage in = ImageIO.read(new File(a[0]));
+  for (int i = 1; i + 1 < a.length; i += 2) {
+    int s = Integer.parseInt(a[i + 1]);
+    Image sc = in.getScaledInstance(s, s, Image.SCALE_AREA_AVERAGING);
+    BufferedImage out = new BufferedImage(s, s, BufferedImage.TYPE_INT_ARGB);
+    Graphics2D g = out.createGraphics(); g.drawImage(sc, 0, 0, null); g.dispose();
+    ImageIO.write(out, "png", new File(a[i]));
+  } } }`), await run("java", ["-Djava.awt.headless=true", file, src, ...outs], { quiet: !0 });
+}
+async function brandWithPatches(app, index, selected) {
   let c = app.customize || {}, done = { via: [] };
   if (!index || app.tool !== "morphe" && app.tool !== "revanced")
     return done;
@@ -1180,11 +1194,13 @@ function brandWithPatches(app, index, selected) {
       select("Custom branding").options[nameKey] = c.name, done.name = !0;
     if (canIcon) {
       let dir = `${WORK}/branding`;
-      rmSync(dir, { recursive: !0, force: !0 }), mkdirSync3(`${dir}/mipmap-xxxhdpi`, { recursive: !0 }), copyFileSync(fg, `${dir}/mipmap-xxxhdpi/${prefix}_adaptive_foreground_custom.png`);
-      let bg = readJson(c.icon.path.replace(/\.png$/, ".json"), {}).background || "#FFFFFF";
-      writeFileSync2(`${dir}/mipmap-xxxhdpi/${prefix}_adaptive_background_custom.png`, solidPng(432, bg));
+      rmSync(dir, { recursive: !0, force: !0 });
+      let bg = readJson(c.icon.path.replace(/\.png$/, ".json"), {}).background || "#FFFFFF", jobs = [];
+      for (let [d, px] of DENSITIES)
+        mkdirSync3(`${dir}/mipmap-${d}`, { recursive: !0 }), jobs.push(`${dir}/mipmap-${d}/${prefix}_adaptive_foreground_custom.png`, String(px)), writeFileSync2(`${dir}/mipmap-${d}/${prefix}_adaptive_background_custom.png`, solidPng(px, bg));
+      await resizePng(fg, jobs);
       let s = select("Custom branding");
-      if (s.options[iconKey] = join2(process.cwd(), dir), appIconKey)
+      if (s.options[iconKey] = resolve(dir), appIconKey)
         s.options[appIconKey] = "custom";
       done.icon = !0;
     }
@@ -1239,7 +1255,7 @@ async function patch(appId) {
     for (let b of bundles)
       args.push("-p", b, ...app.tool === "revanced" ? ["-b"] : []);
     args.push("--exclusive");
-    let selected = app.patches.map((x) => ({ name: x.name, options: { ...x.options || {} } })), handled = brandWithPatches(app, await loadIndex(ps), selected);
+    let selected = app.patches.map((x) => ({ name: x.name, options: { ...x.options || {} } })), handled = await brandWithPatches(app, await loadIndex(ps), selected);
     for (let sel of selected) {
       args.push("-e", sel.name);
       for (let [k, v] of Object.entries(sel.options)) {
@@ -1585,6 +1601,17 @@ async function checkUpdates(only) {
     }), ok(`Queued a build for ${id}`);
   if (!toBuild.length)
     ok("Everything is up to date");
+}
+
+// shared/companions.ts
+function companionIcon(app) {
+  if (app.packageName !== "app.revanced.android.gms")
+    return;
+  if (/MorpheApp\/MicroG-RE/i.test(app.source.url))
+    return "https://raw.githubusercontent.com/MorpheApp/MicroG-RE/main/play-services-core/src/main/res/mipmap-xxxhdpi/ic_app.png";
+  if (/ReVanced\/GmsCore/i.test(app.source.url))
+    return "https://raw.githubusercontent.com/ReVanced/GmsCore/main/play-services-core/src/main/res/mipmap-xxxhdpi/ic_app.png";
+  return;
 }
 
 // engine/site.ts
@@ -2781,7 +2808,7 @@ async function buildSite() {
 `);
     writeFileSync4(`${fd}/metadata/${pkg}.yml`, yml);
     let loc = `${fd}/metadata/${pkg}/en-US`;
-    mkdirSync5(`${loc}/phoneScreenshots`, { recursive: !0 }), await assetTo(app.customize?.icon?.path || app.iconUrl, `${loc}/icon.png`);
+    mkdirSync5(`${loc}/phoneScreenshots`, { recursive: !0 }), await assetTo(app.customize?.icon?.path || app.iconUrl || companionIcon(app), `${loc}/icon.png`);
     let i = 1;
     for (let s of app.listing?.screenshots || [])
       await assetTo(s, `${loc}/phoneScreenshots/${i++}.png`);
@@ -2821,7 +2848,7 @@ async function buildSite() {
   for (let { app, st } of apps) {
     let dir = `${OUT}/apps/${app.id}`;
     mkdirSync5(`${dir}/shots`, { recursive: !0 });
-    let icon = await assetTo(app.customize?.icon?.path || app.iconUrl, `${dir}/icon.png`) ? "icon.png" : "../../assets/icon.png", shots = [], i = 1;
+    let icon = await assetTo(app.customize?.icon?.path || app.iconUrl || companionIcon(app), `${dir}/icon.png`) ? "icon.png" : "../../assets/icon.png", shots = [], i = 1;
     for (let s of app.listing?.screenshots || []) {
       let bare = s.replace(/[?#].*$/, ""), ext = /\.(jpe?g)$/i.test(bare) ? "jpg" : /\.webp$/i.test(bare) ? "webp" : "png";
       if (await assetTo(s, `${dir}/shots/${i}.${ext}`))
