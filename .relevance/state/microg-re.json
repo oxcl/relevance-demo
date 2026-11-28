@@ -48,5 +48,7 @@
     "sourceVersion": "7.4.0"
   },
   "configHash": "4530bd9c31b2355e",
-  "attention": null
+  "attention": null,
+  "checkedAt": "2026-11-28T03:30:23.353Z",
+  "latestAvailable": "7.4.0"
 }
