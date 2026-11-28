@@ -1,14 +1,14 @@
 {
   "appId": "youtube",
-  "status": "building",
+  "status": "ok",
   "releases": [
     {
       "version": "21.23.492",
       "versionCode": 1561177001,
       "tag": "youtube-21.23.492-be3922",
-      "date": "2026-11-28T00:02:11.491Z",
-      "size": 212512777,
-      "sha256": "603f13b00158e5ae006c662ab3848981a608db8463603e820a6629d4d2a00d8f",
+      "date": "2026-11-28T00:06:39.377Z",
+      "size": 212516873,
+      "sha256": "4ca0800a68c2aa3a617ac12a98150e3f79dfa8a1e28dea95d524bf929ee78ca3",
       "apk": "app.morphe.android.youtube_1561177001_be3922.apk",
       "url": "https://github.com/oxcl/relevance-demo/releases/download/youtube-21.23.492-be3922/app.morphe.android.youtube_1561177001_be3922.apk",
       "patches": [
@@ -150,9 +150,10 @@
     {
       "runId": 46086029851,
       "version": "21.23.492",
-      "status": "running",
+      "status": "success",
       "at": "2026-11-28T00:05:50.105Z",
-      "trigger": "manual"
+      "trigger": "manual",
+      "durationMs": 49514
     },
     {
       "runId": 46085611035,
@@ -186,9 +187,9 @@
     "version": "21.23.492",
     "versionCode": 1561177001,
     "tag": "youtube-21.23.492-be3922",
-    "date": "2026-11-28T00:02:11.491Z",
-    "size": 212512777,
-    "sha256": "603f13b00158e5ae006c662ab3848981a608db8463603e820a6629d4d2a00d8f",
+    "date": "2026-11-28T00:06:39.377Z",
+    "size": 212516873,
+    "sha256": "4ca0800a68c2aa3a617ac12a98150e3f79dfa8a1e28dea95d524bf929ee78ca3",
     "apk": "app.morphe.android.youtube_1561177001_be3922.apk",
     "url": "https://github.com/oxcl/relevance-demo/releases/download/youtube-21.23.492-be3922/app.morphe.android.youtube_1561177001_be3922.apk",
     "patches": [
