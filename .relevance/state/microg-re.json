@@ -1,14 +1,29 @@
 {
   "appId": "microg-re",
-  "status": "building",
-  "releases": [],
+  "status": "ok",
+  "releases": [
+    {
+      "version": "7.4.0",
+      "versionCode": 255070319,
+      "tag": "microg-re-7.4.0-4530bd",
+      "date": "2026-11-28T00:06:51.090Z",
+      "size": 113361268,
+      "sha256": "23ecd17cb7a604b9db61e6c0df9b35507a294cb0cf4cbd3335863e3efc399963",
+      "apk": "app.revanced.android.gms_255070319_4530bd.apk",
+      "url": "https://github.com/oxcl/relevance-demo/releases/download/microg-re-7.4.0-4530bd/app.revanced.android.gms_255070319_4530bd.apk",
+      "patches": [],
+      "tool": "none",
+      "sourceVersion": "7.4.0"
+    }
+  ],
   "history": [
     {
       "runId": 46086102909,
       "version": "7.4.0",
-      "status": "running",
+      "status": "success",
       "at": "2026-11-28T00:06:37.236Z",
-      "trigger": "manual"
+      "trigger": "manual",
+      "durationMs": 14079
     }
   ],
   "targetVersion": "7.4.0",
@@ -18,5 +33,20 @@
     ],
     "firstSeen": "2026-11-28T00:06:42.520Z",
     "version": "7.4.0"
-  }
+  },
+  "current": {
+    "version": "7.4.0",
+    "versionCode": 255070319,
+    "tag": "microg-re-7.4.0-4530bd",
+    "date": "2026-11-28T00:06:51.090Z",
+    "size": 113361268,
+    "sha256": "23ecd17cb7a604b9db61e6c0df9b35507a294cb0cf4cbd3335863e3efc399963",
+    "apk": "app.revanced.android.gms_255070319_4530bd.apk",
+    "url": "https://github.com/oxcl/relevance-demo/releases/download/microg-re-7.4.0-4530bd/app.revanced.android.gms_255070319_4530bd.apk",
+    "patches": [],
+    "tool": "none",
+    "sourceVersion": "7.4.0"
+  },
+  "configHash": "4530bd9c31b2355e",
+  "attention": null
 }
