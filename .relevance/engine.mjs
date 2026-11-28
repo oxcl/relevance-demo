@@ -1,5 +1,5 @@
 // shared/types.ts
-var ENGINE_VERSION = "1.3.5";
+var ENGINE_VERSION = "1.3.6";
 
 // engine/build.ts
 import { copyFileSync, existsSync as existsSync4, mkdirSync as mkdirSync3, readdirSync as readdirSync2, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
@@ -1374,6 +1374,15 @@ async function brandWithPatches(app, index, selected) {
       done.via.push(name);
     return s;
   }, brand = findPatch(index, "Custom branding", app.packageName), opts = brand?.options || [], nameKey = opts.find((o) => /name/i.test(o.key))?.key, iconKey = opts.find((o) => /custom ?icon/i.test(o.key))?.key, fg = c.icon?.path?.replace(/\.png$/, "-fg.png"), canIcon = Boolean(c.icon && iconKey && fg && existsSync4(fg)), chosen = selected.some((x) => x.name === "Custom branding"), appIconKey = opts.find((o) => /^appIcon$/i.test(o.key))?.key;
+  if (brand && chosen && !canIcon && !appIconKey && !(c.name && nameKey))
+    return selected.splice(selected.findIndex((x) => x.name === "Custom branding"), 1), info("Skipping Custom branding: without a custom name or icon it would only replace the app icon"), done;
+  if (brand && chosen && !canIcon && !appIconKey)
+    warn("Custom branding replaces the app icon with the patcher's own; set an icon under Name & icon to choose it yourself");
+  if (brand && chosen && !canIcon && appIconKey) {
+    let s = selected.find((x) => x.name === "Custom branding");
+    if (s.options[appIconKey] === void 0 || s.options[appIconKey] === null || s.options[appIconKey] === "")
+      s.options[appIconKey] = "original", info("Custom branding: keeping the original app icon");
+  }
   if (brand && (chosen || canIcon || c.name && nameKey && appIconKey)) {
     if (!chosen && !canIcon && appIconKey)
       select("Custom branding").options[appIconKey] = "original";
@@ -3169,11 +3178,11 @@ function appPage(cfg, app, st, o) {
 ${warning}
 ${o.shots.length ? `<section class="shots">${o.shots.map((s) => `<button class="shot" data-zoom="${s}"><img src="${s}" alt="Screenshot" loading="lazy"></button>`).join("")}</section>` : ""}
 <section class="two">
-  <article class="card reveal"><h2>Description</h2><div class="desc scroll">${sanitizeHtml(app.listing?.description || `<p>${esc(app.listing?.summary || "")}</p>`)}</div></article>
+  <article class="card reveal"><h2>Description</h2><div class="desc scroll">${app.listing?.description || app.listing?.summary ? sanitizeHtml(app.listing?.description || `<p>${esc(app.listing?.summary || "")}</p>`) : '<p class="muted">No description yet.</p>'}</div></article>
   <article class="card reveal"><h2>Patches applied${cur.patches.length ? ` <span class="count">${cur.patches.length}</span>` : ""}</h2>${cur.patches.length ? `${cur.patches.length > 10 ? `<label class="filter">${ICON.search}<input type="search" placeholder="Filter ${cur.patches.length} patches" data-filter="patches" aria-label="Filter patches"></label>` : ""}<ul class="checks scroll" id="patches">${cur.patches.map((p) => `<li>${ICON.check}<span>${esc(p)}</span></li>`).join("")}</ul><p class="muted none" hidden>No patch matches.</p>` : `<p class="muted">${app.customize?.name || app.customize?.icon || app.customize?.packageName ? "Basic modifications only (name, icon or package)." : "Unmodified — passed on exactly as released."}</p>`}</article>
 </section>
 <section class="two">
-  <article class="card reveal"><h2>Versions</h2><table class="versions"><thead><tr><th>Version</th><th>Date</th><th>Size</th><th></th></tr></thead><tbody>${versions}</tbody></table></article>
+  <article class="card reveal"><h2>Versions</h2><div class="scroll"><table class="versions"><thead><tr><th>Version</th><th>Date</th><th>Size</th><th></th></tr></thead><tbody>${versions}</tbody></table></div></article>
   ${fdroidCard(o.fdroidAdd, 2)}
 </section>
 </main>
@@ -3239,6 +3248,8 @@ h2 .count{display:inline-block;vertical-align:middle;margin-left:6px;padding:1px
 .filter{display:flex;align-items:center;gap:8px;margin:-2px 0 10px;padding:8px 12px;border-radius:12px;background:var(--container);color:var(--muted);transition:box-shadow .2s}.filter:focus-within{box-shadow:0 0 0 2px var(--olive)}
 .filter input{flex:1;min-width:0;border:0;background:none;font:inherit;color:var(--text);outline:none}
 .checks li.hide{display:none}
+.two>.fdroid{margin:0}.fdroid>div{flex:1}
+@media(max-width:760px){.fdroid{flex-direction:column;align-items:stretch}.fdroid .qr{align-self:center}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
 `, SCRIPT = `
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.08});
