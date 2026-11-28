@@ -1,0 +1,15 @@
+{
+  "appId": "microg-re",
+  "status": "building",
+  "releases": [],
+  "history": [
+    {
+      "runId": 46086102909,
+      "version": "7.4.0",
+      "status": "running",
+      "at": "2026-11-28T00:06:37.236Z",
+      "trigger": "manual"
+    }
+  ],
+  "targetVersion": "7.4.0"
+}
