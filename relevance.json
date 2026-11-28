@@ -846,7 +846,11 @@
       "customPatches": [],
       "pin": null,
       "customize": {
-        "name": "YouTube Mod"
+        "name": "YouTube Mod",
+        "icon": {
+          "mode": "edit",
+          "path": ".relevance/apps/youtube/icon.png"
+        }
       },
       "listing": {},
       "enabled": true,

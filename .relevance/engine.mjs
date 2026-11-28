@@ -4,6 +4,7 @@ var ENGINE_VERSION = "1.3.2";
 // engine/build.ts
 import { copyFileSync, existsSync as existsSync4, mkdirSync as mkdirSync3, readdirSync as readdirSync2, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
 import { createHash as createHash2 } from "node:crypto";
+import { deflateSync } from "node:zlib";
 import { join as join2 } from "node:path";
 
 // shared/logic.ts
@@ -1138,6 +1139,71 @@ function optionArg(v) {
     return v.replace(/(["'])/g, "\\$1");
   return String(v);
 }
+function solidPng(size, hex) {
+  let m = /^#?([0-9a-f]{6})$/i.exec(hex.trim()) || [, "ffffff"], [r, g, b] = [0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16)), row = Buffer.alloc(1 + size * 3);
+  for (let x = 0;x < size; x++)
+    row.set([r, g, b], 1 + x * 3);
+  let raw = Buffer.concat(Array.from({ length: size }, () => row)), crcTable = Array.from({ length: 256 }, (_, n) => {
+    let c = n;
+    for (let k = 0;k < 8; k++)
+      c = c & 1 ? 3988292384 ^ c >>> 1 : c >>> 1;
+    return c >>> 0;
+  }), crc = (buf) => {
+    let c = 4294967295;
+    for (let byte of buf)
+      c = crcTable[(c ^ byte) & 255] ^ c >>> 8;
+    return (c ^ 4294967295) >>> 0;
+  }, chunk = (type, data) => {
+    let len = Buffer.alloc(4);
+    len.writeUInt32BE(data.length);
+    let td = Buffer.concat([Buffer.from(type), data]), c = Buffer.alloc(4);
+    return c.writeUInt32BE(crc(td)), Buffer.concat([len, td, c]);
+  }, ihdr = Buffer.alloc(13);
+  return ihdr.writeUInt32BE(size, 0), ihdr.writeUInt32BE(size, 4), ihdr.set([8, 2, 0, 0, 0], 8), Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]);
+}
+function brandWithPatches(app, index, selected) {
+  let c = app.customize || {}, done = { via: [] };
+  if (!index || app.tool !== "morphe" && app.tool !== "revanced")
+    return done;
+  let prefix = app.tool, select = (name) => {
+    let s = selected.find((x) => x.name === name);
+    if (!s)
+      selected.push(s = { name, options: {} });
+    if (!done.via.includes(name))
+      done.via.push(name);
+    return s;
+  }, brand = findPatch(index, "Custom branding", app.packageName), opts = brand?.options || [], nameKey = opts.find((o) => /name/i.test(o.key))?.key, iconKey = opts.find((o) => /custom ?icon/i.test(o.key))?.key, fg = c.icon?.path?.replace(/\.png$/, "-fg.png"), canIcon = Boolean(c.icon && iconKey && fg && existsSync4(fg)), chosen = selected.some((x) => x.name === "Custom branding"), appIconKey = opts.find((o) => /^appIcon$/i.test(o.key))?.key;
+  if (brand && (chosen || canIcon || c.name && nameKey && appIconKey)) {
+    if (!chosen && !canIcon && appIconKey)
+      select("Custom branding").options[appIconKey] = "original";
+    if (c.name && nameKey)
+      select("Custom branding").options[nameKey] = c.name, done.name = !0;
+    if (canIcon) {
+      let dir = `${WORK}/branding`;
+      rmSync(dir, { recursive: !0, force: !0 }), mkdirSync3(`${dir}/mipmap-xxxhdpi`, { recursive: !0 }), copyFileSync(fg, `${dir}/mipmap-xxxhdpi/${prefix}_adaptive_foreground_custom.png`);
+      let bg = readJson(c.icon.path.replace(/\.png$/, ".json"), {}).background || "#FFFFFF";
+      writeFileSync2(`${dir}/mipmap-xxxhdpi/${prefix}_adaptive_background_custom.png`, solidPng(432, bg));
+      let s = select("Custom branding");
+      if (s.options[iconKey] = join2(process.cwd(), dir), appIconKey)
+        s.options[appIconKey] = "custom";
+      done.icon = !0;
+    }
+  }
+  let pkgPatch = c.packageName && c.packageName !== app.packageName ? findPatch(index, "Change package name", app.packageName) : null, pkgKey = pkgPatch?.options?.find((o) => /package/i.test(o.key))?.key;
+  if (pkgPatch && pkgKey) {
+    let s = select("Change package name");
+    s.options[pkgKey] = c.packageName;
+    for (let o of pkgPatch.options || [])
+      if (/providers|permissions/i.test(o.key) && s.options[o.key] === void 0)
+        s.options[o.key] = !0;
+    done.packageName = !0;
+  }
+  if (done.name || done.icon || done.packageName) {
+    let what = [done.name && "name", done.icon && "icon", done.packageName && "package name"].filter(Boolean).join(", ");
+    info(`Applying your ${what} with ${done.via.join(" + ")} (no apktool round trip needed)`);
+  }
+  return done;
+}
 async function patch(appId) {
   let cfg = loadConfig(), app = getApp(cfg, appId), p = loadPlan(), input = `${WORK}/current.apk`, out = `${WORK}/patched.apk`;
   if (app.tool === "none")
@@ -1173,14 +1239,16 @@ async function patch(appId) {
     for (let b of bundles)
       args.push("-p", b, ...app.tool === "revanced" ? ["-b"] : []);
     args.push("--exclusive");
-    for (let sel of app.patches) {
+    let selected = app.patches.map((x) => ({ name: x.name, options: { ...x.options || {} } })), handled = brandWithPatches(app, await loadIndex(ps), selected);
+    for (let sel of selected) {
       args.push("-e", sel.name);
-      for (let [k, v] of Object.entries(sel.options || {})) {
-        if (v === void 0 || v === "")
+      for (let [k, v] of Object.entries(sel.options)) {
+        if (v === void 0 || v === "" || v === null)
           continue;
         args.push(`-O${k}=${optionArg(v)}`);
       }
     }
+    writeJson(`${WORK}/branding.json`, handled);
     for (let c of custom)
       for (let n of c.patchNames?.length ? c.patchNames : [c.name])
         args.push("-e", n);
@@ -1236,9 +1304,14 @@ function dropConfigs(resDir, dirs) {
   warn(`Dropped ${dirs.length} resource folder${dirs.length === 1 ? "" : "s"} for configurations no device can have (${dirs.slice(0, 4).join(", ")}${dirs.length > 4 ? ", …" : ""})`);
 }
 async function customize(appId) {
-  let cfg = loadConfig(), app = getApp(cfg, appId), c = app.customize || {};
-  if (!c.name && !c.packageName && !c.icon)
+  let cfg = loadConfig(), app = getApp(cfg, appId), handled = readJson(`${WORK}/branding.json`, {}), all = app.customize || {}, c = { name: handled.name ? void 0 : all.name, packageName: handled.packageName ? void 0 : all.packageName, icon: handled.icon ? void 0 : all.icon };
+  if (!c.name && !c.packageName && !c.icon) {
+    if (handled.via?.length)
+      return ok(`Name, icon and package were already applied by ${handled.via.join(" + ")} — nothing left to decompile`);
     return log("No basic modifications — skipping");
+  }
+  if (handled.via?.length)
+    info(`${handled.via.join(" + ")} took care of part of it; decompiling for the rest`);
   let apktool = await fetchCli("apktool"), dec = `${WORK}/decoded`;
   rmSync(dec, { recursive: !0, force: !0 }), info("Decompiling resources (code stays untouched)"), await run("java", ["-jar", apktool, "d", "-f", "-s", "-o", dec, `${WORK}/current.apk`]);
   let meta = readJson(`${WORK}/input.json`, { packageName: app.packageName }), manifestPath = join2(dec, "AndroidManifest.xml"), xml = readFileSync3(manifestPath, "utf8"), curPkg = xml.match(/<manifest\b[^>]*package="([^"]+)"/)?.[1] || meta.packageName, resDir = join2(dec, "res");
