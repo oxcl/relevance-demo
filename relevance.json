@@ -11,7 +11,7 @@
     },
     "store": {
       "title": "oxcl's apps",
-      "description": "A small, honest collection of apps \u2014 kept up to date automatically."
+      "description": "A small, honest collection of apps — kept up to date automatically."
     },
     "relevanceUrl": "https://relevance.cocoparrot-backend.workers.dev",
     "signing": {
@@ -856,6 +856,32 @@
       "enabled": true,
       "createdAt": "2026-11-28T00:00:00Z",
       "updatedAt": "2026-11-28T00:00:00Z"
+    },
+    {
+      "id": "microg-re",
+      "name": "MicroG-RE",
+      "packageName": "app.revanced.android.gms",
+      "iconUrl": "https://raw.githubusercontent.com/MorpheApp/MicroG-RE/main/play-services-core/src/main/res/mipmap-xxxhdpi/ic_app.png",
+      "source": {
+        "type": "github",
+        "url": "https://github.com/MorpheApp/MicroG-RE",
+        "assetPattern": "^microg-[\\w.]+\\.apk$"
+      },
+      "tool": "none",
+      "patches": [],
+      "customPatches": [],
+      "pin": null,
+      "customize": {},
+      "listing": {
+        "summary": "Morphe's MicroG build, so patched Google apps can sign in.",
+        "description": "<p>Morphe's MicroG build, so patched Google apps can sign in.</p><p>YouTube patched without root can't use Google Play services, so it needs MicroG for sign-in, notifications and casting.</p>",
+        "category": "System",
+        "website": "https://github.com/MorpheApp/MicroG-RE",
+        "screenshots": []
+      },
+      "enabled": true,
+      "createdAt": "2026-11-28T00:06:14.097Z",
+      "updatedAt": "2026-11-28T00:06:14.097Z"
     }
   ]
 }
