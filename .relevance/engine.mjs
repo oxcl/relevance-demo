@@ -1,5 +1,5 @@
 // shared/types.ts
-var ENGINE_VERSION = "1.3.6";
+var ENGINE_VERSION = "1.3.7";
 
 // engine/build.ts
 import { copyFileSync, existsSync as existsSync4, mkdirSync as mkdirSync3, readdirSync as readdirSync2, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
@@ -1401,6 +1401,9 @@ async function brandWithPatches(app, index, selected) {
       done.icon = !0;
     }
   }
+  let branded = selected.find((x) => x.name === "Custom branding"), label = readJson(`${WORK}/input.json`, {}).label;
+  if (brand && branded && nameKey && !branded.options[nameKey] && label)
+    branded.options[nameKey] = label, info(`Custom branding: keeping the original name "${label}"`);
   let pkgPatch = c.packageName && c.packageName !== app.packageName ? findPatch(index, "Change package name", app.packageName) : null, pkgKey = pkgPatch?.options?.find((o) => /package/i.test(o.key))?.key;
   if (pkgPatch && pkgKey) {
     let s = select("Change package name");
