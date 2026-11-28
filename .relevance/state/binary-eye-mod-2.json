@@ -48,5 +48,7 @@
     "sourceVersion": "1.76.1"
   },
   "configHash": "3591017c3369a69d",
-  "attention": null
+  "attention": null,
+  "checkedAt": "2026-11-28T03:30:25.005Z",
+  "latestAvailable": "1.76.1"
 }
