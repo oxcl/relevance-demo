@@ -1,14 +1,29 @@
 {
   "appId": "scanner-clone-2",
-  "status": "building",
-  "releases": [],
+  "status": "ok",
+  "releases": [
+    {
+      "version": "1.76.1",
+      "versionCode": 184,
+      "tag": "scanner-clone-2-1.76.1-070f29",
+      "date": "2026-11-28T01:07:46.487Z",
+      "size": 7723824,
+      "sha256": "9cfe110403f4cf98654e08e4a3fdd9ff8cb941eb4f7d10cc880e9c546bcbcba9",
+      "apk": "de.markusfisch.android.binaryeye.binaryeyemod.scannerclone.clone_184_070f29.apk",
+      "url": "https://github.com/oxcl/relevance-demo/releases/download/scanner-clone-2-1.76.1-070f29/de.markusfisch.android.binaryeye.binaryeyemod.scannerclone.clone_184_070f29.apk",
+      "patches": [],
+      "tool": "none",
+      "sourceVersion": "1.76.1"
+    }
+  ],
   "history": [
     {
       "runId": 46091486655,
       "version": "1.76.1",
-      "status": "running",
+      "status": "success",
       "at": "2026-11-28T01:07:31.054Z",
-      "trigger": "manual"
+      "trigger": "manual",
+      "durationMs": 15524
     }
   ],
   "targetVersion": "1.76.1",
@@ -18,5 +33,20 @@
     ],
     "firstSeen": "2026-11-28T01:07:34.917Z",
     "version": "1.76.1"
-  }
+  },
+  "current": {
+    "version": "1.76.1",
+    "versionCode": 184,
+    "tag": "scanner-clone-2-1.76.1-070f29",
+    "date": "2026-11-28T01:07:46.487Z",
+    "size": 7723824,
+    "sha256": "9cfe110403f4cf98654e08e4a3fdd9ff8cb941eb4f7d10cc880e9c546bcbcba9",
+    "apk": "de.markusfisch.android.binaryeye.binaryeyemod.scannerclone.clone_184_070f29.apk",
+    "url": "https://github.com/oxcl/relevance-demo/releases/download/scanner-clone-2-1.76.1-070f29/de.markusfisch.android.binaryeye.binaryeyemod.scannerclone.clone_184_070f29.apk",
+    "patches": [],
+    "tool": "none",
+    "sourceVersion": "1.76.1"
+  },
+  "configHash": "070f29a3872a6672",
+  "attention": null
 }
