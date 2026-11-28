@@ -1,14 +1,14 @@
 {
   "appId": "youtube",
-  "status": "building",
+  "status": "ok",
   "releases": [
     {
       "version": "21.23.492",
       "versionCode": 1561177001,
       "tag": "youtube-21.23.492-81dcf6",
-      "date": "2026-11-28T00:40:21.118Z",
+      "date": "2026-11-28T00:45:02.557Z",
       "size": 212496417,
-      "sha256": "58988a00d9f3572e620f08bdf78ce452ea5bbc98d2a7b3dc881af9abf56db814",
+      "sha256": "64ddc67c55fd8dd324cfbf7bda409a3cc12dc407f20363ac52725cf4609898a9",
       "apk": "com.google.android.youtube.mod_1561177001_81dcf6.apk",
       "url": "https://github.com/oxcl/relevance-demo/releases/download/youtube-21.23.492-81dcf6/com.google.android.youtube.mod_1561177001_81dcf6.apk",
       "patches": [
@@ -293,9 +293,10 @@
     {
       "runId": 46089455879,
       "version": "21.23.492",
-      "status": "running",
+      "status": "success",
       "at": "2026-11-28T00:44:11.419Z",
-      "trigger": "manual"
+      "trigger": "manual",
+      "durationMs": 51434
     },
     {
       "runId": 46089035016,
@@ -353,9 +354,9 @@
     "version": "21.23.492",
     "versionCode": 1561177001,
     "tag": "youtube-21.23.492-81dcf6",
-    "date": "2026-11-28T00:40:21.118Z",
+    "date": "2026-11-28T00:45:02.557Z",
     "size": 212496417,
-    "sha256": "58988a00d9f3572e620f08bdf78ce452ea5bbc98d2a7b3dc881af9abf56db814",
+    "sha256": "64ddc67c55fd8dd324cfbf7bda409a3cc12dc407f20363ac52725cf4609898a9",
     "apk": "com.google.android.youtube.mod_1561177001_81dcf6.apk",
     "url": "https://github.com/oxcl/relevance-demo/releases/download/youtube-21.23.492-81dcf6/com.google.android.youtube.mod_1561177001_81dcf6.apk",
     "patches": [
