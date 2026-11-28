@@ -11,5 +11,12 @@
       "trigger": "manual"
     }
   ],
-  "targetVersion": "7.4.0"
+  "targetVersion": "7.4.0",
+  "sourceCert": {
+    "sha256": [
+      "0b6c9515afb195fac59601696ba0a7907a0b217ccf720b43148427ccf64343e7"
+    ],
+    "firstSeen": "2026-11-28T00:06:42.520Z",
+    "version": "7.4.0"
+  }
 }
