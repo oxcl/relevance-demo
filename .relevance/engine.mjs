@@ -1,5 +1,5 @@
 // shared/types.ts
-var ENGINE_VERSION = "1.3.3";
+var ENGINE_VERSION = "1.3.4";
 
 // engine/build.ts
 import { copyFileSync, existsSync as existsSync4, mkdirSync as mkdirSync3, readdirSync as readdirSync2, readFileSync as readFileSync3, renameSync, rmSync, statSync, writeFileSync as writeFileSync2 } from "node:fs";
@@ -872,6 +872,193 @@ async function resolveIssues(app) {
   } catch {}
 }
 
+// engine/axml.ts
+var ATTR = {
+  label: 16842753,
+  name: 16842755,
+  permission: 16842758,
+  taskAffinity: 16842770,
+  authorities: 16842776,
+  manageSpaceActivity: 16842756,
+  targetActivity: 16843266,
+  backupAgent: 16843391,
+  readPermission: 16842759,
+  writePermission: 16842760
+};
+function decodePool(b, at) {
+  let headerSize = b.readUInt16LE(at + 2), size = b.readUInt32LE(at + 4), count = b.readUInt32LE(at + 8), styleCount = b.readUInt32LE(at + 12), flags = b.readUInt32LE(at + 16), stringsStart = b.readUInt32LE(at + 20), stylesStart = b.readUInt32LE(at + 24), utf8 = (flags & 256) !== 0, strings = [];
+  for (let i = 0;i < count; i++) {
+    let p = at + stringsStart + b.readUInt32LE(at + headerSize + i * 4);
+    if (utf8) {
+      let n = b[p++];
+      if (n & 128)
+        n = (n & 127) << 8 | b[p++];
+      let len = b[p++];
+      if (len & 128)
+        len = (len & 127) << 8 | b[p++];
+      strings.push(b.toString("utf8", p, p + len));
+    } else {
+      let len = b.readUInt16LE(p);
+      if (p += 2, len & 32768)
+        len = (len & 32767) << 16 | b.readUInt16LE(p), p += 2;
+      strings.push(b.toString("utf16le", p, p + len * 2));
+    }
+  }
+  let styleOffsets = styleCount ? b.subarray(at + headerSize + count * 4, at + headerSize + count * 4 + styleCount * 4) : Buffer.alloc(0), styles = styleCount ? b.subarray(at + stylesStart, at + size) : Buffer.alloc(0);
+  return { size, utf8, strings, flags, styleCount, styleOffsets: Buffer.from(styleOffsets), styles: Buffer.from(styles) };
+}
+function encodePool(p, strings) {
+  let parts = [], offsets = [], pos = 0;
+  for (let s of strings) {
+    offsets.push(pos);
+    let buf;
+    if (p.utf8) {
+      let bytes = Buffer.from(s, "utf8"), len = (n) => n > 127 ? Buffer.from([128 | n >> 8, n & 255]) : Buffer.from([n]);
+      buf = Buffer.concat([len(s.length), len(bytes.length), bytes, Buffer.from([0])]);
+    } else {
+      let chars = Buffer.from(s, "utf16le"), n = s.length, head = n > 32767 ? Buffer.from([n >> 16 & 32767 | 32768, n & 65535].flatMap((v) => [v & 255, v >> 8])) : Buffer.from([n & 255, n >> 8]);
+      buf = Buffer.concat([head, chars, Buffer.from([0, 0])]);
+    }
+    parts.push(buf), pos += buf.length;
+  }
+  let data = Buffer.concat(parts);
+  if (data.length % 4)
+    data = Buffer.concat([data, Buffer.alloc(4 - data.length % 4)]);
+  let headerSize = 28, stringsStart = headerSize + strings.length * 4 + p.styleCount * 4, stylesStart = p.styleCount ? stringsStart + data.length : 0, size = stringsStart + data.length + p.styles.length, h = Buffer.alloc(headerSize);
+  h.writeUInt16LE(1, 0), h.writeUInt16LE(headerSize, 2), h.writeUInt32LE(size, 4), h.writeUInt32LE(strings.length, 8), h.writeUInt32LE(p.styleCount, 12), h.writeUInt32LE(p.flags & -2, 16), h.writeUInt32LE(stringsStart, 20), h.writeUInt32LE(stylesStart, 24);
+  let offs = Buffer.alloc(strings.length * 4);
+  return offsets.forEach((o, i) => offs.writeUInt32LE(o, i * 4)), Buffer.concat([h, offs, p.styleOffsets, data, p.styles]);
+}
+function parse(b) {
+  if (b.readUInt16LE(0) !== 3)
+    throw Error("Not a binary XML file");
+  let poolAt = b.readUInt16LE(2);
+  if (b.readUInt16LE(poolAt) !== 1)
+    throw Error("Binary XML without string pool");
+  let pool = decodePool(b, poolAt), resMap = [], root = { name: "#root", attrs: [], children: [] }, cur = root, p = poolAt + pool.size;
+  while (p < b.length) {
+    let type = b.readUInt16LE(p), size = b.readUInt32LE(p + 4);
+    if (type === 384) {
+      let n = (size - 8) / 4;
+      resMap = Array.from({ length: n }, (_, i) => b.readUInt32LE(p + 8 + i * 4));
+    } else if (type === 258) {
+      let ext = p + b.readUInt16LE(p + 2), name = pool.strings[b.readUInt32LE(ext + 4)], attrStart = b.readUInt16LE(ext + 8), attrSize = b.readUInt16LE(ext + 10), count = b.readUInt16LE(ext + 12), el = { name, attrs: [], children: [], parent: cur };
+      for (let i = 0;i < count; i++) {
+        let off = ext + attrStart + i * attrSize, nameIdx = b.readUInt32LE(off + 4);
+        el.attrs.push({
+          off,
+          nameIdx,
+          resId: resMap[nameIdx] ?? 0,
+          name: pool.strings[nameIdx] ?? "",
+          raw: b.readInt32LE(off + 8),
+          type: b[off + 15],
+          data: b.readUInt32LE(off + 16)
+        });
+      }
+      cur.children.push(el), cur = el;
+    } else if (type === 259)
+      cur = cur.parent || root;
+    if (size <= 0)
+      break;
+    p += size;
+  }
+  return { poolAt, pool, root };
+}
+var walk = (e, f) => {
+  f(e);
+  for (let c of e.children)
+    walk(c, f);
+};
+function editManifest(input, edit) {
+  let b = Buffer.from(input), { poolAt, pool, root } = parse(b), strings = [...pool.strings], changes = [], intern = (s) => (strings.push(s), strings.length - 1), strOf = (a) => a.type === 3 ? strings[a.data] : a.raw >= 0 ? strings[a.raw] : void 0, setStr = (a, v) => {
+    let idx = intern(v);
+    b.writeInt32LE(idx, a.off + 8), b.writeUInt16LE(8, a.off + 12), b[a.off + 14] = 0, b[a.off + 15] = 3, b.writeUInt32LE(idx, a.off + 16), a.raw = idx, a.type = 3, a.data = idx;
+  }, attr = (e, id, plain) => e.attrs.find((a) => a.resId ? a.resId === id : plain !== void 0 && a.name === plain && !a.resId), manifest;
+  if (walk(root, (e) => manifest ||= e.name === "manifest" ? e : void 0), !manifest)
+    throw Error("No <manifest> element");
+  let pkgAttr = manifest.attrs.find((a) => a.name === "package" && !a.resId), oldPkg = pkgAttr && strOf(pkgAttr);
+  if (!pkgAttr || !oldPkg)
+    throw Error("Manifest has no package attribute");
+  let app = manifest.children.find((c) => c.name === "application");
+  if (edit.label) {
+    let targets = [];
+    if (app)
+      targets.push(app);
+    walk(manifest, (e) => {
+      if (e.name !== "activity" && e.name !== "activity-alias")
+        return;
+      let launcher = !1;
+      if (walk(e, (c) => {
+        if (c.name === "category" && strOf(attr(c, ATTR.name, "name") || {}) === "android.intent.category.LAUNCHER")
+          launcher = !0;
+      }), launcher)
+        targets.push(e);
+    });
+    let n = 0;
+    for (let t of targets) {
+      let a = attr(t, ATTR.label, "label");
+      if (a)
+        setStr(a, edit.label), n++;
+      else if (t === app)
+        throw Error("The <application> element has no label to replace");
+    }
+    changes.push(`label → "${edit.label}" (${n} place${n === 1 ? "" : "s"})`);
+  }
+  let newPkg = edit.packageName;
+  if (newPkg && newPkg !== oldPkg) {
+    let absolute = (v) => v.startsWith(".") ? oldPkg + v : v.includes(".") ? v : `${oldPkg}.${v}`, components = /* @__PURE__ */ new Set(["application", "activity", "activity-alias", "service", "receiver", "provider", "instrumentation"]), classes = 0;
+    if (walk(manifest, (e) => {
+      if (!components.has(e.name))
+        return;
+      let ids = e.name === "activity-alias" ? [ATTR.targetActivity] : [ATTR.name, ATTR.backupAgent, ATTR.manageSpaceActivity];
+      for (let id of ids) {
+        let a = attr(e, id), v = a && strOf(a);
+        if (a && v && absolute(v) !== v)
+          setStr(a, absolute(v)), classes++;
+      }
+    }), classes)
+      changes.push(`${classes} relative class name${classes === 1 ? "" : "s"} made absolute`);
+    setStr(pkgAttr, newPkg), changes.push(`package ${oldPkg} → ${newPkg}`);
+    let move = (v) => v.startsWith(oldPkg) ? newPkg + v.slice(oldPkg.length) : `${newPkg}.${v}`, auth = 0;
+    if (walk(manifest, (e) => {
+      if (e.name !== "provider")
+        return;
+      let a = attr(e, ATTR.authorities), v = a && strOf(a);
+      if (a && v)
+        setStr(a, v.split(";").map(move).join(";")), auth++;
+    }), auth)
+      changes.push(`${auth} provider authorit${auth === 1 ? "y" : "ies"} moved`);
+    let declared = /* @__PURE__ */ new Set;
+    walk(manifest, (e) => {
+      if (e.name !== "permission")
+        return;
+      let v = strOf(attr(e, ATTR.name) || {});
+      if (v)
+        declared.add(v);
+    });
+    let perms = 0;
+    if (declared.size)
+      walk(manifest, (e) => {
+        for (let a of e.attrs) {
+          if (![ATTR.name, ATTR.permission, ATTR.readPermission, ATTR.writePermission].includes(a.resId))
+            continue;
+          let v = strOf(a);
+          if (v && declared.has(v))
+            setStr(a, move(v)), perms++;
+        }
+      });
+    if (declared.size)
+      changes.push(`${declared.size} custom permission${declared.size === 1 ? "" : "s"} renamed (${perms} references)`);
+    walk(manifest, (e) => {
+      let a = attr(e, ATTR.taskAffinity), v = a && strOf(a);
+      if (a && v && v.startsWith(oldPkg))
+        setStr(a, newPkg + v.slice(oldPkg.length));
+    });
+  }
+  let newPool = encodePool(pool, strings), out = Buffer.concat([b.subarray(0, poolAt), newPool, b.subarray(poolAt + pool.size)]);
+  return out.writeUInt32LE(out.length, 4), { bytes: out, oldPackage: oldPkg, changes };
+}
+
 // engine/apkeep.ts
 import { chmodSync, createReadStream, existsSync as existsSync3, mkdirSync as mkdirSync2, readdirSync } from "node:fs";
 import { createHash } from "node:crypto";
@@ -1327,7 +1514,20 @@ async function customize(appId) {
     return log("No basic modifications — skipping");
   }
   if (handled.via?.length)
-    info(`${handled.via.join(" + ")} took care of part of it; decompiling for the rest`);
+    info(`${handled.via.join(" + ")} took care of part of it`);
+  if (!c.icon) {
+    info("Editing the compiled manifest (no decompile needed)");
+    let apk = resolve(`${WORK}/current.apk`), tmp = `${WORK}/manifest-edit`;
+    rmSync(tmp, { recursive: !0, force: !0 }), mkdirSync3(tmp, { recursive: !0 }), await run("python3", ["-I", "-c", 'import sys,zipfile;open(sys.argv[2],"wb").write(zipfile.ZipFile(sys.argv[1]).read("AndroidManifest.xml"))', apk, `${tmp}/AndroidManifest.xml`], { quiet: !0 });
+    let r = editManifest(readFileSync3(`${tmp}/AndroidManifest.xml`), { packageName: c.packageName, label: c.name });
+    writeFileSync2(`${tmp}/AndroidManifest.xml`, r.bytes), await run("zip", ["-q", apk, "AndroidManifest.xml"], { cwd: tmp, quiet: !0 });
+    for (let ch of r.changes)
+      ok(ch.charAt(0).toUpperCase() + ch.slice(1));
+    let after = await apkInfo(apk);
+    if (c.packageName && after.packageName !== c.packageName)
+      throw Error(`Manifest edit failed: package is ${after.packageName}`);
+    return ok("Customized APK ready");
+  }
   let apktool = await fetchCli("apktool"), dec = `${WORK}/decoded`;
   rmSync(dec, { recursive: !0, force: !0 }), info("Decompiling resources (code stays untouched)"), await run("java", ["-jar", apktool, "d", "-f", "-s", "-o", dec, `${WORK}/current.apk`]);
   let meta = readJson(`${WORK}/input.json`, { packageName: app.packageName }), manifestPath = join2(dec, "AndroidManifest.xml"), xml = readFileSync3(manifestPath, "utf8"), curPkg = xml.match(/<manifest\b[^>]*package="([^"]+)"/)?.[1] || meta.packageName, resDir = join2(dec, "res");
