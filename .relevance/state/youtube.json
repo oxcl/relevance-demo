@@ -494,5 +494,7 @@
     "sourceVersion": "21.23.492"
   },
   "configHash": "81dcf67984fa7a4b",
-  "patchVersion": "2.4.0"
+  "patchVersion": "2.4.0",
+  "checkedAt": "2026-11-28T03:30:21.687Z",
+  "latestAvailable": "21.47.483-SECONDARY"
 }
