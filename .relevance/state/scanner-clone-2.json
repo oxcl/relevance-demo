@@ -1,0 +1,15 @@
+{
+  "appId": "scanner-clone-2",
+  "status": "building",
+  "releases": [],
+  "history": [
+    {
+      "runId": 46091486655,
+      "version": "1.76.1",
+      "status": "running",
+      "at": "2026-11-28T01:07:31.054Z",
+      "trigger": "manual"
+    }
+  ],
+  "targetVersion": "1.76.1"
+}
